@@ -1,5 +1,5 @@
 import { Product } from "@/types";
-import { ProductCard } from "./ui/product-card";
+import { ProductCard } from "../product-card";
 import { getProducts } from "@/lib/data/products";
 
 export async function ProductsGrid() {

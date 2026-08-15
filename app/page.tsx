@@ -1,8 +1,9 @@
+import { Suspense } from "react";
 import { CategoryFilters } from "./components/category-filters";
 import { HeroDescription } from "./components/hero-description";
-import { ProductsGrid } from "./components/products-grid";
+import { ProductsGrid } from "./components/ui/products-grid";
 
-export default async function Home() {
+export default function Home() {
   return (
     <div
       className="min-h-screen flex flex-col"
@@ -10,7 +11,9 @@ export default async function Home() {
     >
       <HeroDescription />
       <CategoryFilters />
-      <ProductsGrid />
+      <Suspense>
+        <ProductsGrid />
+      </Suspense>
     </div>
   );
 }

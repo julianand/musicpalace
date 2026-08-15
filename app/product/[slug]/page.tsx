@@ -1,9 +1,50 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Product } from "@/types";
-import { getProduct, getProducts } from "@/lib/data/products";
-import RelatedScroll from "@/app/components/related-scroll";
-import { getReviews, ReviewWithUser } from "@/lib/data/reviews";
+import { getProduct } from "@/lib/data/products";
+import { RelatedProductsGrid } from './components/related-products-grid';
+import { Suspense } from "react";
+import { ProductReviews } from "./components/product-reviews";
+
+function ProductPageSkeleton() {
+  return (
+    <div className="max-w-6xl mx-auto px-6 py-10 animate-pulse">
+      {/* Breadcrumb */}
+      <div className="flex items-center gap-2 mb-10">
+        <div className="h-3 w-10 rounded-full" style={{ background: "var(--surface-2)" }} />
+        <div className="h-3 w-3 rounded-full" style={{ background: "var(--surface-2)" }} />
+        <div className="h-3 w-20 rounded-full" style={{ background: "var(--surface-2)" }} />
+        <div className="h-3 w-3 rounded-full" style={{ background: "var(--surface-2)" }} />
+        <div className="h-3 w-32 rounded-full" style={{ background: "var(--surface-2)" }} />
+      </div>
+      {/* Hero */}
+      <section className="flex flex-col gap-6 mb-16">
+        <div className="h-6 w-24 rounded-lg" style={{ background: "var(--surface-2)" }} />
+        <div className="flex flex-col gap-3">
+          <div className="h-12 w-96 rounded-xl" style={{ background: "var(--surface-2)" }} />
+          <div className="h-5 w-48 rounded-full" style={{ background: "var(--surface-2)" }} />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <div className="h-3 w-full max-w-2xl rounded-full" style={{ background: "var(--surface-2)" }} />
+          <div className="h-3 w-4/5 max-w-2xl rounded-full" style={{ background: "var(--surface-2)" }} />
+          <div className="h-3 w-3/5 max-w-2xl rounded-full" style={{ background: "var(--surface-2)" }} />
+        </div>
+        <div style={{ height: "1px", background: "var(--border)" }} />
+        <div className="flex items-center gap-6">
+          <div className="h-12 w-40 rounded-xl" style={{ background: "var(--surface-2)" }} />
+          <div className="flex gap-3">
+            <div className="h-12 w-36 rounded-2xl" style={{ background: "var(--surface-2)" }} />
+            <div className="h-12 w-28 rounded-2xl" style={{ background: "var(--surface-2)" }} />
+          </div>
+        </div>
+      </section>
+      {/* Reviews + Rating grid */}
+      <section className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2 rounded-2xl p-8 h-96" style={{ background: "var(--surface)", border: "1px solid var(--border)" }} />
+        <div className="rounded-2xl p-8 h-64" style={{ background: "var(--surface)", border: "1px solid var(--border)" }} />
+      </section>
+    </div>
+  );
+}
 
 function StarRating({ rating }: { rating: number }) {
   const full = Math.floor(rating);
@@ -68,54 +109,11 @@ function RatingBar({ label, value, accentColor }: { label: string; value: number
   );
 }
 
-function RelatedCard({ product }: { product: Product }) {
-  return (
-    <Link
-      href={`/product/${product.slug}`}
-      className="rounded-xl overflow-hidden flex flex-col group shrink-0 w-56 transition-transform duration-200 hover:-translate-y-1"
-      style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
-    >
-      <div className="h-32 flex items-center justify-center relative" style={{ background: product.category.background_color }}>
-        <div
-          className="w-14 h-14 rounded-xl flex items-center justify-center opacity-80 group-hover:scale-110 transition-transform duration-500"
-          style={{ background: `${product.category.accent_color}15`, border: `1px solid ${product.category.accent_color}30` }}
-        >
-          <svg className="w-7 h-7" viewBox="0 0 24 24" fill={product.category.accent_color} opacity="0.8">
-            <path d="M9 3v10.55A4 4 0 1 0 11 17V7h4V3H9z" />
-          </svg>
-        </div>
-        <span
-          className="absolute top-3 left-3 px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wide"
-          style={{ background: product.category.background_color, color: product.category.accent_color, fontFamily: "var(--font-dm-sans)" }}
-        >
-          {product.category.name}
-        </span>
-      </div>
-      <div className="p-4 flex flex-col gap-1.5">
-        <h3
-          className="text-sm font-bold leading-snug group-hover:text-(--amber) transition-colors duration-200 line-clamp-2"
-          style={{ fontFamily: "var(--font-playfair)", color: "var(--foreground)" }}
-        >
-          {product.name}
-        </h3>
-        <p className="text-base font-bold" style={{ fontFamily: "var(--font-playfair)", color: "var(--foreground)" }}>
-          {product.formattedPrice}
-        </p>
-      </div>
-    </Link>
-  );
-}
-
-export default async function ProductPage({ params }: PageProps<"/product/[slug]">) {
+async function ProductContent({ params }: { params: PageProps<"/product/[slug]">["params"] }) {
   const { slug } = await params;
   const product = await getProduct({ slug });
 
   if (!product) notFound();
-
-  const [related, reviews] = await Promise.all([
-    getProducts({ category_id: product.category_id }),
-    getReviews({ product_id: product.id }),
-  ]);
 
   // Simulated rating breakdown based on overall rating
   const ratingBreakdown = [
@@ -126,11 +124,7 @@ export default async function ProductPage({ params }: PageProps<"/product/[slug]
   ];
 
   return (
-    <main
-      className="min-h-screen animate-fade-in-up"
-      style={{ background: "var(--background)" }}
-    >
-      <div className="max-w-6xl mx-auto px-6 py-10">
+    <div className="max-w-6xl mx-auto px-6 py-10">
 
         {/* Breadcrumb */}
         <nav className="flex items-center gap-2 mb-10 text-sm" style={{ fontFamily: "var(--font-dm-sans)" }}>
@@ -147,27 +141,13 @@ export default async function ProductPage({ params }: PageProps<"/product/[slug]
           <span className="line-clamp-1" style={{ color: "var(--foreground)" }}>{product.name}</span>
         </nav>
 
-        {/* Hero — 2 columns */}
-        <section className="grid grid-cols-1 lg:grid-cols-2 gap-10 mb-16">
-
-          {/* Left: Visual panel */}
-          <div
-            className="relative rounded-3xl overflow-hidden flex items-center justify-center"
-            style={{ background: product.category.background_color, minHeight: "380px" }}
-          >
-            {/* Subtle radial glow */}
-            <div
-              className="absolute inset-0 pointer-events-none"
-              style={{
-                background: `radial-gradient(ellipse 60% 60% at 50% 50%, ${product.category.accent_color}18 0%, transparent 70%)`,
-              }}
-            />
-
-            {/* Category badge */}
+        {/* Hero — 1 column */}
+        <section className="flex flex-col gap-6 mb-16">
+          <div className="flex items-center gap-3">
             <span
-              className="absolute top-5 left-5 px-3 py-1.5 rounded-lg text-xs font-semibold tracking-widest uppercase"
+              className="px-3 py-1.5 rounded-lg text-xs font-semibold tracking-widest uppercase"
               style={{
-                background: product.category.background_color,
+                background: `${product.category.accent_color}18`,
                 color: product.category.accent_color,
                 fontFamily: "var(--font-dm-sans)",
                 border: `1px solid ${product.category.accent_color}40`,
@@ -175,86 +155,36 @@ export default async function ProductPage({ params }: PageProps<"/product/[slug]
             >
               {product.category.name}
             </span>
+          </div>
 
-            {/* Wishlist */}
-            <button
-              className="absolute top-5 right-5 p-2.5 rounded-xl transition-all duration-200 cursor-pointer"
-              style={{
-                background: "rgba(12,12,14,0.65)",
-                backdropFilter: "blur(10px)",
-                border: "1px solid rgba(255,255,255,0.08)",
-              }}
+          <div className="flex flex-col gap-3">
+            <h1
+              className="text-5xl font-bold leading-tight"
+              style={{ fontFamily: "var(--font-playfair)", color: "var(--foreground)" }}
             >
-              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="2">
-                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-              </svg>
-            </button>
-
-            {/* Main icon */}
-            <div
-              className="w-36 h-36 rounded-3xl flex items-center justify-center"
-              style={{
-                background: `${product.category.accent_color}12`,
-                border: `1.5px solid ${product.category.accent_color}35`,
-                boxShadow: `0 0 60px ${product.category.accent_color}25`,
-              }}
-            >
-              <svg className="w-16 h-16" viewBox="0 0 24 24" fill={product.category.accent_color} opacity="0.85">
-                <path d="M9 3v10.55A4 4 0 1 0 11 17V7h4V3H9z" />
-              </svg>
-            </div>
-
-            {/* Score pill */}
-            <div
-              className="absolute bottom-5 right-5 flex items-center gap-1.5 px-3 py-1.5 rounded-xl"
-              style={{
-                background: "rgba(12,12,14,0.8)",
-                backdropFilter: "blur(10px)",
-                border: "1px solid rgba(255,255,255,0.07)",
-              }}
-            >
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="#f0a500">
-                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-              </svg>
+              {product.name}
+            </h1>
+            <div className="flex items-center gap-3">
+              <StarRating rating={product.overall_rating!} />
               <span
-                className="text-sm font-bold"
-                style={{ color: "var(--foreground)", fontFamily: "var(--font-dm-sans)" }}
+                className="text-sm"
+                style={{ color: "var(--muted)", fontFamily: "var(--font-dm-sans)" }}
               >
-                {product.overall_rating} / 5
+                {product.overall_rating} · {product.review_count!.toLocaleString("en-US")} reviews
               </span>
             </div>
           </div>
 
-          {/* Right: Info */}
-          <div className="flex flex-col justify-center gap-6">
-            <div className="flex flex-col gap-3">
-              <h1
-                className="text-4xl font-bold leading-tight"
-                style={{ fontFamily: "var(--font-playfair)", color: "var(--foreground)" }}
-              >
-                {product.name}
-              </h1>
+          <p
+            className="text-sm leading-relaxed max-w-2xl"
+            style={{ color: "var(--muted)", fontFamily: "var(--font-dm-sans)" }}
+          >
+            {product.description}
+          </p>
 
-              <div className="flex items-center gap-3">
-                <StarRating rating={product.overall_rating!} />
-                <span
-                  className="text-sm"
-                  style={{ color: "var(--muted)", fontFamily: "var(--font-dm-sans)" }}
-                >
-                  {product.overall_rating} · {product.review_count!.toLocaleString("en-US")} reviews
-                </span>
-              </div>
-            </div>
+          <div style={{ height: "1px", background: "var(--border)" }} />
 
-            <p
-              className="text-sm leading-relaxed"
-              style={{ color: "var(--muted)", fontFamily: "var(--font-dm-sans)" }}
-            >
-              {product.description}
-            </p>
-
-            <div style={{ height: "1px", background: "var(--border)" }} />
-
+          <div className="flex items-center gap-6">
             <div className="flex items-end gap-1">
               <span
                 className="text-xs mb-1"
@@ -272,7 +202,7 @@ export default async function ProductPage({ params }: PageProps<"/product/[slug]
 
             <div className="flex items-center gap-3">
               <button
-                className="flex-1 py-3.5 rounded-2xl text-sm font-semibold transition-all duration-200 cursor-pointer"
+                className="px-8 py-3.5 rounded-2xl text-sm font-semibold transition-all duration-200 cursor-pointer"
                 style={{
                   background: product.category.accent_color,
                   color: "#0c0c0e",
@@ -282,7 +212,7 @@ export default async function ProductPage({ params }: PageProps<"/product/[slug]
                 + Add to Cart
               </button>
               <button
-                className="flex-1 py-3.5 rounded-2xl text-sm font-medium transition-all duration-200 cursor-pointer"
+                className="px-8 py-3.5 rounded-2xl text-sm font-medium transition-all duration-200 cursor-pointer"
                 style={{
                   background: "var(--surface-2)",
                   border: "1px solid var(--border)",
@@ -300,96 +230,11 @@ export default async function ProductPage({ params }: PageProps<"/product/[slug]
         <section className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-16">
 
           {/* User reviews list */}
-          <div
-            className="lg:col-span-2 rounded-2xl p-8 flex flex-col gap-6"
-            style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
-          >
-            <div className="flex items-center gap-3">
-              <div
-                className="w-1 h-6 rounded-full"
-                style={{ background: product.category.accent_color }}
-              />
-              <h2
-                className="text-xl font-bold"
-                style={{ fontFamily: "var(--font-playfair)", color: "var(--foreground)" }}
-              >
-                Reviews
-              </h2>
-              <span
-                className="text-sm px-2 py-0.5 rounded-full"
-                style={{ background: "var(--surface-2)", color: "var(--muted)", fontFamily: "var(--font-dm-sans)" }}
-              >
-                {reviews.length}
-              </span>
-            </div>
-
-            {reviews.length === 0 ? (
-              <p className="text-sm" style={{ color: "var(--muted)", fontFamily: "var(--font-dm-sans)" }}>
-                No reviews yet.
-              </p>
-            ) : (
-              <div className="flex flex-col divide-y" style={{ borderColor: "var(--border)" }}>
-                {reviews.map((review: ReviewWithUser) => (
-                  <div key={String(review.id)} className="py-5 flex flex-col gap-3 first:pt-0 last:pb-0">
-                    {/* Header */}
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div
-                          className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold uppercase"
-                          style={{ background: `${product.category.accent_color}20`, color: product.category.accent_color, fontFamily: "var(--font-dm-sans)" }}
-                        >
-                          {review.users.firstname[0]}{review.users.lastname[0]}
-                        </div>
-                        <span className="text-sm font-semibold" style={{ color: "var(--foreground)", fontFamily: "var(--font-dm-sans)" }}>
-                          {review.users.firstname} {review.users.lastname}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span
-                          className="text-lg font-black"
-                          style={{ color: product.category.accent_color, fontFamily: "var(--font-playfair)" }}
-                        >
-                          {Number(review.overall).toFixed(1)}
-                        </span>
-                        <span className="text-xs" style={{ color: "var(--muted)", fontFamily: "var(--font-dm-sans)" }}>/5</span>
-                      </div>
-                    </div>
-
-                    {/* Sub-ratings */}
-                    <div className="grid grid-cols-2 gap-x-6 gap-y-1">
-                      {[
-                        { label: "Sound", value: review.sound_quality },
-                        { label: "Build", value: review.build_quality },
-                        { label: "Value", value: review.value },
-                        { label: "Ease of use", value: review.ease_of_use },
-                      ].map((item) => (
-                        <div key={item.label} className="flex items-center justify-between">
-                          <span className="text-xs" style={{ color: "var(--muted)", fontFamily: "var(--font-dm-sans)" }}>{item.label}</span>
-                          <span className="text-xs font-semibold" style={{ color: "var(--foreground)", fontFamily: "var(--font-dm-sans)" }}>{item.value}/5</span>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Comment */}
-                    {review.comment && (
-                      <p className="text-sm leading-relaxed" style={{ color: "var(--muted)", fontFamily: "var(--font-dm-sans)" }}>
-                        &ldquo;{review.comment}&rdquo;
-                      </p>
-                    )}
-
-                    {/* Date */}
-                    <span className="text-xs" style={{ color: "var(--muted)", fontFamily: "var(--font-dm-sans)" }}>
-                      {new Date(review.created_at).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          <ProductReviews product={product} />
 
           {/* Rating breakdown */}
           <div
-            className="rounded-2xl p-8 flex flex-col gap-6"
+            className="rounded-2xl p-8 flex flex-col gap-6 self-start"
             style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
           >
             <div className="flex items-center gap-3">
@@ -441,26 +286,22 @@ export default async function ProductPage({ params }: PageProps<"/product/[slug]
         </section>
 
         {/* Related products */}
-        {related.length > 0 && (
-          <section className="flex flex-col gap-6">
-            <div className="flex items-center gap-3">
-              <div className="w-1 h-6 rounded-full" style={{ background: "var(--amber)" }} />
-              <h2
-                className="text-2xl font-bold"
-                style={{ fontFamily: "var(--font-playfair)", color: "var(--foreground)" }}
-              >
-                More in {product.category.name}
-              </h2>
-            </div>
-            <RelatedScroll>
-              {related.map((p) => (
-                <RelatedCard key={p.id} product={p} />
-              ))}
-            </RelatedScroll>
-          </section>
-        )}
-
+        <Suspense>
+          <RelatedProductsGrid product={product}></RelatedProductsGrid>
+        </Suspense>
       </div>
+  );
+}
+
+export default function ProductPage(props: PageProps<"/product/[slug]">) {
+  return (
+    <main
+      className="min-h-screen animate-fade-in-up"
+      style={{ background: "var(--background)" }}
+    >
+      <Suspense fallback={<ProductPageSkeleton />}>
+        <ProductContent params={props.params} />
+      </Suspense>
     </main>
   );
 }

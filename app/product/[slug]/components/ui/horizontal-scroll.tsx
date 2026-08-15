@@ -2,7 +2,7 @@
 
 import { useRef, useEffect } from "react"
 
-export default function RelatedScroll({ children }: { children: React.ReactNode }) {
+export function HorizontalScroll({ children }: { children: React.ReactNode }) {
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {

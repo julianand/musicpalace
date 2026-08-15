@@ -1,17 +1,16 @@
 import { Review } from "@/types";
 import { prisma } from "../prisma";
 
-export type ReviewWithUser = Review & {
-  users: {
-    firstname: string;
-    lastname: string;
-  };
-};
-
-export async function getReviews(params?: Partial<Review>): Promise<ReviewWithUser[]> {
-  return prisma.reviews.findMany({
+export async function getReviews(params?: Partial<Review>): Promise<Review[]> {
+  const res = await prisma.reviews.findMany({
     ...(params && { where: params }),
-    include: { users: { select: { firstname: true, lastname: true } } },
+    include: { users: true },
     orderBy: { created_at: "desc" },
   });
+
+  return res.map(r => ({
+    ...r,
+    users: undefined,
+    user: r.users,
+  }))
 }

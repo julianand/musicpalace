@@ -68,8 +68,6 @@ function SearchBar() {
   );
 }
 
-
-
 export function Header() {
   const cartProducts: Product[] = [];
   return (
@@ -99,7 +97,7 @@ export function Header() {
               fontFamily: "var(--font-dm-sans)",
             }}
           >
-            JD
+            JP
           </Link>
         </div>
       </div>

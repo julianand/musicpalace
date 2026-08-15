@@ -1,5 +1,6 @@
 import { Product, ProductCategory } from "@/types";
 import { prisma } from "../prisma";
+import { cacheLife } from "next/cache";
 
 function formatPrice(value: number): string {
   const rounded = Math.round(value);
@@ -31,6 +32,9 @@ export async function getProducts(
 }
 
 export async function getProduct(params: Partial<Product>): Promise<Product> {
+  'use cache';
+  cacheLife('hours');
+
   const res = await prisma.products.findUnique({
     include: { product_categories: true },
     where: params as never,

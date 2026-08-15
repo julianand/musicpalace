@@ -43,15 +43,13 @@
     },
     "prisma-cli": {
       "source": "prisma/skills",
-      "sourceType": "github",
-      "skillPath": "prisma-cli/SKILL.md",
-      "computedHash": "129e77cba93984b88d66cf0f66d5788f5487431f17f189a1ab2d839976874e3b"
+      "sourceType": "autoskills-registry",
+      "computedHash": "d2b4e410bb24df07e0a399cf1fd70ca6a2f696079f7e6445eb602116566d2278"
     },
     "prisma-client-api": {
       "source": "prisma/skills",
-      "sourceType": "github",
-      "skillPath": "prisma-client-api/SKILL.md",
-      "computedHash": "cbbabff961c8e16b2d59f8c1ffb4e7e20be52154e778ab95121e0211d6d09969"
+      "sourceType": "autoskills-registry",
+      "computedHash": "922d6b5b4eb4387e72e409fa063f8e1bffb9037aed595cba0d3c257f418b6c18"
     },
     "prisma-compute": {
       "source": "prisma/skills",
@@ -61,9 +59,8 @@
     },
     "prisma-database-setup": {
       "source": "prisma/skills",
-      "sourceType": "github",
-      "skillPath": "prisma-database-setup/SKILL.md",
-      "computedHash": "6a991a2530a6da7131e3fc71c353e8278702d0146b8b6e1d2fdfc2d3d0a21bd2"
+      "sourceType": "autoskills-registry",
+      "computedHash": "50c6cbc7090ef356c026cb76352952b83b65bee8b3f3c7ac337461f5b352e9b9"
     },
     "prisma-driver-adapter-implementation": {
       "source": "prisma/skills",
@@ -79,9 +76,8 @@
     },
     "prisma-postgres": {
       "source": "prisma/skills",
-      "sourceType": "github",
-      "skillPath": "prisma-postgres/SKILL.md",
-      "computedHash": "0422727e18019add9208b86ce862964025acc011ff31fba1d59a01b836bd6272"
+      "sourceType": "autoskills-registry",
+      "computedHash": "3adda04ae85b8593cfca45d48d5d410ddffb2797ea53f6dc9dfe34b8d71d35e9"
     },
     "prisma-postgres-setup": {
       "source": "prisma/skills",
