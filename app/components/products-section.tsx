@@ -1,5 +1,10 @@
 import { Product } from "@/types";
+import { getProductCount, getProducts } from "@/lib/data/products";
 import Link from "next/link";
+import { Suspense } from "react";
+import { ResultCount } from "./result-count";
+
+const RECORD_PAGINATION = 9;
 
 function StarRating({ rating }: { rating: number }) {
   const full = Math.floor(rating);
@@ -46,15 +51,9 @@ function StarRating({ rating }: { rating: number }) {
   );
 }
 
-export function ProductCard({
-  product,
-  index,
-}: {
-  product: Product;
-  index: number;
-}) {
+function ProductCard({ product, index }: { product: Product; index: number }) {
   return (
-    <Link href={`/product/${product.slug}`} prefetch={'auto'}>
+    <Link href={`/product/${product.slug}`} prefetch={"auto"}>
       <article
         className={`animate-fade-in-up card-delay-${index + 1} rounded-2xl overflow-hidden flex flex-col group cursor-pointer`}
         style={{
@@ -110,9 +109,17 @@ export function ProductCard({
           >
             <span
               className="text-2xl font-black uppercase"
-              style={{ color: product.category.accent_color, fontFamily: "var(--font-playfair)", opacity: 0.85 }}
+              style={{
+                color: product.category.accent_color,
+                fontFamily: "var(--font-playfair)",
+                opacity: 0.85,
+              }}
             >
-              {product.name.split(" ").slice(0, 2).map((w: string) => w[0]).join("")}
+              {product.name
+                .split(" ")
+                .slice(0, 2)
+                .map((w: string) => w[0])
+                .join("")}
             </span>
           </div>
 
@@ -231,5 +238,42 @@ export function ProductCard({
         </div>
       </article>
     </Link>
+  );
+}
+
+async function Grid({ pageProps }: { pageProps: PageProps<"/">; }) {
+  const searchParams = await pageProps.searchParams;
+  const activePage = Number(searchParams.page || "1");
+  const products: Product[] = await getProducts({
+    orderBy: { overall_rating: "desc" },
+    take: RECORD_PAGINATION,
+    skip: (activePage - 1) * RECORD_PAGINATION,
+  });
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      {products.map((product, index) => (
+        <ProductCard key={product.id} product={product} index={index} />
+      ))}
+    </div>
+  );
+}
+
+export async function ProductsSection({
+  pageProps,
+}: {
+  pageProps: PageProps<"/">;
+}) {
+  const productCount = await getProductCount();
+
+  return (
+    <main className="flex-1 max-w-7xl mx-auto px-6 py-12 w-full">
+      <Suspense>
+        <ResultCount productCount={productCount} recordPagination={RECORD_PAGINATION} />
+      </Suspense>
+      <Suspense>
+        <Grid pageProps={pageProps} />
+      </Suspense>
+    </main>
   );
 }

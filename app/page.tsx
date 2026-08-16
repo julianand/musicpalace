@@ -1,9 +1,8 @@
-import { Suspense } from "react";
 import { CategoryFilters } from "./components/category-filters";
 import { HeroDescription } from "./components/hero-description";
-import { ProductsGrid } from "./components/ui/products-grid";
+import { ProductsSection } from "./components/products-section";
 
-export default function Home() {
+export default async function Home(props: PageProps<"/">) {
   return (
     <div
       className="min-h-screen flex flex-col"
@@ -11,9 +10,7 @@ export default function Home() {
     >
       <HeroDescription />
       <CategoryFilters />
-      <Suspense>
-        <ProductsGrid />
-      </Suspense>
+      <ProductsSection pageProps={props} />
     </div>
   );
 }
