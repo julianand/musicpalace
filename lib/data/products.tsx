@@ -36,6 +36,7 @@ export async function getProductCount(
 ): Promise<number> {
   "use cache";
   cacheLife("hours");
+
   return prisma.products.count({ ...params });
 }
 

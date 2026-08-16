@@ -20,13 +20,27 @@ export function ResultCount({
   const restOfProducts = productCount - (activePage - 1) * recordPagination;
   const productsInViewport = Math.min(restOfProducts, recordPagination);
 
-  const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1)
-    .map((v) => {
-      if ([1, totalPages].includes(v)) return v;
-      if (v >= activePage - 1 && v <= activePage + 1) return v;
-      return undefined;
-    })
-    .filter((v, i, arr) => !!(arr[i] || arr[i - 1]));
+  // Build fixed 7-slot layout: [1] [...] [p-1] [p] [p+1] [...] [last]
+  type Slot = number | "dots-left" | "dots-right";
+  function buildSlots(): Slot[] {
+    if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
+
+    const showLeftDots = activePage > 3;
+    const showRightDots = activePage < totalPages - 2;
+
+    if (!showLeftDots) {
+      // near start: [1] [2] [3] [4] [5] [...] [last]
+      return [1, 2, 3, 4, 5, "dots-right", totalPages];
+    }
+    if (!showRightDots) {
+      // near end: [1] [...] [last-4] [last-3] [last-2] [last-1] [last]
+      return [1, "dots-left", totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+    }
+    // middle: [1] [...] [p-1] [p] [p+1] [...] [last]
+    return [1, "dots-left", activePage - 1, activePage, activePage + 1, "dots-right", totalPages];
+  }
+
+  const slots = buildSlots();
 
   function goToPage(page: number) {
     startTransition(() => {
@@ -62,29 +76,29 @@ export function ResultCount({
         </button>
 
         {/* Pages */}
-        {pageNumbers.map((page, i) =>
-          page ? (
-            <button
-              key={i}
-              className="w-8 h-8 rounded-lg text-xs font-semibold transition-colors cursor-pointer"
-              style={{
-                background: page === activePage ? "var(--amber)" : "var(--surface)",
-                color: page === activePage ? "#0c0c0e" : "var(--muted)",
-                border: page === activePage ? "none" : "1px solid var(--border)",
-                fontFamily: "var(--font-dm-sans)",
-              }}
-              onClick={() => goToPage(page)}
-            >
-              {page}
-            </button>
-          ) : (
+        {slots.map((slot, i) =>
+          slot === "dots-left" || slot === "dots-right" ? (
             <span
-              key={i}
-              className="text-xs px-1"
+              key={slot}
+              className="w-8 h-8 flex items-center justify-center text-xs"
               style={{ color: "var(--muted)", fontFamily: "var(--font-dm-sans)" }}
             >
               ...
             </span>
+          ) : (
+            <button
+              key={i}
+              className="w-8 h-8 rounded-lg text-xs font-semibold transition-colors cursor-pointer"
+              style={{
+                background: slot === activePage ? "var(--amber)" : "var(--surface)",
+                color: slot === activePage ? "#0c0c0e" : "var(--muted)",
+                border: slot === activePage ? "none" : "1px solid var(--border)",
+                fontFamily: "var(--font-dm-sans)",
+              }}
+              onClick={() => goToPage(slot)}
+            >
+              {slot}
+            </button>
           )
         )}
 

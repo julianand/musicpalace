@@ -2,7 +2,7 @@ import { Product } from "@/types";
 import { getProductCount, getProducts } from "@/lib/data/products";
 import Link from "next/link";
 import { Suspense } from "react";
-import { ResultCount } from "./result-count";
+import { ResultCount } from "./ui/result-count";
 
 const RECORD_PAGINATION = 9;
 
