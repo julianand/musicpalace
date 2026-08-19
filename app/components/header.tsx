@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { CartPreview } from "./ui/cart-preview";
 import { Product } from "@/types";
+import { ProfileContainer } from "./ui/profile-menu";
 
 function Logo() {
   return (
@@ -86,19 +87,7 @@ export function Header() {
         {/* Actions */}
         <div className="flex items-center gap-3 shrink-0">
           <CartPreview cartProducts={cartProducts} />
-
-          {/* Profile */}
-          <Link
-            href="/profile"
-            className="w-9 h-9 rounded-xl flex items-center justify-center text-sm font-semibold transition-all duration-200 cursor-pointer"
-            style={{
-              background: "linear-gradient(135deg, #f0a500 0%, #a06e00 100%)",
-              color: "#0c0c0e",
-              fontFamily: "var(--font-dm-sans)",
-            }}
-          >
-            JP
-          </Link>
+          <ProfileContainer />
         </div>
       </div>
     </header>

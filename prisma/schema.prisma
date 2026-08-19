@@ -10,10 +10,11 @@ datasource db {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model product_categories {
   created_at       DateTime   @default(now()) @db.Timestamptz(6)
-  name             String
+  name             String     @unique
   background_color String
   accent_color     String
   id               BigInt     @id(map: "product_category_pkey") @default(autoincrement())
+  slug             String     @unique @default(dbgenerated("lower(replace(name, ' '::text, '_'::text))"))
   products         products[]
 }
 

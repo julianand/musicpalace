@@ -1,29 +1,27 @@
 "use client";
 
+import { PRODUCTS_MAIN_RECORD_PAGINATION } from "@/lib/products/filters";
 import { useRouter } from "next/navigation";
 import { useSearchParams } from "next/navigation";
 import { startTransition, useOptimistic } from "react";
 
-export function ResultCount({
-  productCount,
-  recordPagination,
-}: {
-  productCount: number;
-  recordPagination: number;
-}) {
+const pagination = PRODUCTS_MAIN_RECORD_PAGINATION;
+
+export function ResultCount({ productCount }: { productCount: number }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const urlPage = Number(searchParams.get("page") ?? "1");
   const [activePage, setActivePage] = useOptimistic(urlPage);
 
-  const totalPages = Math.ceil(productCount / recordPagination);
-  const restOfProducts = productCount - (activePage - 1) * recordPagination;
-  const productsInViewport = Math.min(restOfProducts, recordPagination);
+  const totalPages = Math.ceil(productCount / pagination);
+  const restOfProducts = productCount - (activePage - 1) * pagination;
+  const productsInViewport = Math.min(restOfProducts, pagination);
 
   // Build fixed 7-slot layout: [1] [...] [p-1] [p] [p+1] [...] [last]
   type Slot = number | "dots-left" | "dots-right";
   function buildSlots(): Slot[] {
-    if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
+    if (totalPages <= 7)
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
 
     const showLeftDots = activePage > 3;
     const showRightDots = activePage < totalPages - 2;
@@ -34,10 +32,26 @@ export function ResultCount({
     }
     if (!showRightDots) {
       // near end: [1] [...] [last-4] [last-3] [last-2] [last-1] [last]
-      return [1, "dots-left", totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+      return [
+        1,
+        "dots-left",
+        totalPages - 4,
+        totalPages - 3,
+        totalPages - 2,
+        totalPages - 1,
+        totalPages,
+      ];
     }
     // middle: [1] [...] [p-1] [p] [p+1] [...] [last]
-    return [1, "dots-left", activePage - 1, activePage, activePage + 1, "dots-right", totalPages];
+    return [
+      1,
+      "dots-left",
+      activePage - 1,
+      activePage,
+      activePage + 1,
+      "dots-right",
+      totalPages,
+    ];
   }
 
   const slots = buildSlots();
@@ -45,8 +59,10 @@ export function ResultCount({
   function goToPage(page: number) {
     startTransition(() => {
       setActivePage(page);
-      router.push(`/?page=${page}`, { scroll: false });
-    })
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("page", page.toString());
+      router.push(`/?${params}`, { scroll: false });
+    });
   }
 
   return (
@@ -67,10 +83,19 @@ export function ResultCount({
         {/* Prev */}
         <button
           className="p-2 rounded-lg transition-colors cursor-pointer"
-          style={{ border: "1px solid var(--border)", background: "var(--surface)" }}
+          style={{
+            border: "1px solid var(--border)",
+            background: "var(--surface)",
+          }}
           onClick={() => goToPage(Math.max(activePage - 1, 1))}
         >
-          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="2">
+          <svg
+            className="w-4 h-4"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="var(--muted)"
+            strokeWidth="2"
+          >
             <path d="M15 18l-6-6 6-6" />
           </svg>
         </button>
@@ -81,7 +106,10 @@ export function ResultCount({
             <span
               key={slot}
               className="w-8 h-8 flex items-center justify-center text-xs"
-              style={{ color: "var(--muted)", fontFamily: "var(--font-dm-sans)" }}
+              style={{
+                color: "var(--muted)",
+                fontFamily: "var(--font-dm-sans)",
+              }}
             >
               ...
             </span>
@@ -90,25 +118,36 @@ export function ResultCount({
               key={i}
               className="w-8 h-8 rounded-lg text-xs font-semibold transition-colors cursor-pointer"
               style={{
-                background: slot === activePage ? "var(--amber)" : "var(--surface)",
+                background:
+                  slot === activePage ? "var(--amber)" : "var(--surface)",
                 color: slot === activePage ? "#0c0c0e" : "var(--muted)",
-                border: slot === activePage ? "none" : "1px solid var(--border)",
+                border:
+                  slot === activePage ? "none" : "1px solid var(--border)",
                 fontFamily: "var(--font-dm-sans)",
               }}
               onClick={() => goToPage(slot)}
             >
               {slot}
             </button>
-          )
+          ),
         )}
 
         {/* Next */}
         <button
           className="p-2 rounded-lg transition-colors cursor-pointer"
-          style={{ border: "1px solid var(--border)", background: "var(--surface)" }}
+          style={{
+            border: "1px solid var(--border)",
+            background: "var(--surface)",
+          }}
           onClick={() => goToPage(Math.min(activePage + 1, totalPages))}
         >
-          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="2">
+          <svg
+            className="w-4 h-4"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="var(--muted)"
+            strokeWidth="2"
+          >
             <path d="M9 18l6-6-6-6" />
           </svg>
         </button>

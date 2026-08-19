@@ -3,8 +3,31 @@ import { getProductCount, getProducts } from "@/lib/data/products";
 import Link from "next/link";
 import { Suspense } from "react";
 import { ResultCount } from "./ui/result-count";
+import { PRODUCTS_MAIN_RECORD_PAGINATION, ProductSort } from "@/lib/products/filters";
 
-const RECORD_PAGINATION = 9;
+type FilterProps = Pick<NonNullable<Parameters<typeof getProducts>[0]>, "where" | "orderBy">;
+
+function getFilterProps(
+  searchParams: Record<string, string | undefined>,
+): FilterProps {
+  const activeCategory = searchParams.category ?? "all";
+  const activeSort = searchParams.sort as ProductSort ?? "rating";
+
+  const where: FilterProps['where'] = {};
+  const orderBy: FilterProps['orderBy'] = {};
+
+  if (activeCategory !== 'all') where.product_categories = { slug: activeCategory };
+
+  if (activeSort === 'rating') orderBy.overall_rating = 'desc';
+  if (activeSort === 'recent') orderBy.created_at = 'desc';
+  if (activeSort === 'price_asc') orderBy.price = 'asc';
+  if (activeSort === 'price_desc') orderBy.price = 'desc';
+
+  return {
+    ...(Object.keys(where).length && { where }),
+    orderBy,
+  };
+}
 
 function StarRating({ rating }: { rating: number }) {
   const full = Math.floor(rating);
@@ -241,13 +264,19 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
   );
 }
 
-async function Grid({ pageProps }: { pageProps: PageProps<"/">; }) {
-  const searchParams = await pageProps.searchParams;
+async function Grid({ pageProps }: { pageProps: PageProps<"/"> }) {
+  const searchParams = (await pageProps.searchParams) as Record<
+    string,
+    string | undefined
+  >;
+
+  const filter = getFilterProps(searchParams);
   const activePage = Number(searchParams.page || "1");
   const products: Product[] = await getProducts({
     orderBy: { overall_rating: "desc" },
-    take: RECORD_PAGINATION,
-    skip: (activePage - 1) * RECORD_PAGINATION,
+    take: PRODUCTS_MAIN_RECORD_PAGINATION,
+    skip: (activePage - 1) * PRODUCTS_MAIN_RECORD_PAGINATION,
+    ...filter,
   });
 
   return (
@@ -264,12 +293,18 @@ export async function ProductsSection({
 }: {
   pageProps: PageProps<"/">;
 }) {
-  const productCount = await getProductCount();
+  const searchParams = (await pageProps.searchParams) as Record<
+    string,
+    string | undefined
+  >;
+
+  const filter = getFilterProps(searchParams);
+  const productCount = await getProductCount({ ...filter });
 
   return (
     <main className="flex-1 max-w-7xl mx-auto px-6 py-12 w-full">
       <Suspense>
-        <ResultCount productCount={productCount} recordPagination={RECORD_PAGINATION} />
+        <ResultCount productCount={productCount} />
       </Suspense>
       <Suspense>
         <Grid pageProps={pageProps} />

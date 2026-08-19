@@ -45,7 +45,13 @@ function RelatedCard({ product }: { product: Product }) {
 }
 
 export async function RelatedProductsGrid({ product }: { product: Product }) {
-  const relatedProducts = await getProducts({ where: { category_id: product.category_id } });
+  const relatedProducts = await getProducts({
+    where: {
+      category_id: product.category_id,
+      id: { not: product.id },
+    }
+  });
+
   if (!relatedProducts.length) return;
 
   return (

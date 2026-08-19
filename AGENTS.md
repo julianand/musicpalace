@@ -14,6 +14,8 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - React 19
 - TypeScript
 - Tailwind CSS v4
+- Prisma ORM (PostgreSQL)
+- Supabase (Auth + Database)
 
 ## Project conventions
 
@@ -23,3 +25,26 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 ### File naming
 - Use **kebab-case** for all component files (e.g. `related-scroll.tsx`, `product-card.tsx`). Never use PascalCase filenames.
+
+## Database
+
+### Prisma client
+- The generated client lives at `app/generated/prisma/client` — import from there, not from `@prisma/client`.
+- The client requires the `PrismaPg` driver adapter (see `lib/prisma.ts`). Never instantiate `PrismaClient` without it.
+
+### Seed / backup
+- `prisma/seed.ts` contains a full snapshot of the production data (users, product_categories, products, reviews).
+- It is idempotent: uses `upsert` on every record, so it can be re-run safely without duplicating data.
+- After inserting, it resets PostgreSQL sequences so future `autoincrement()` IDs don't collide.
+- Configured in `package.json` under `"prisma": { "seed": "tsx prisma/seed.ts" }`.
+
+**To recreate the database from scratch:**
+```bash
+npx prisma db push   # creates tables from schema.prisma
+npx prisma db seed   # inserts all records from the backup
+```
+
+**To run the seed against the local .env:**
+```bash
+npx tsx --env-file=.env prisma/seed.ts
+```
