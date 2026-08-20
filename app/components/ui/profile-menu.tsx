@@ -2,6 +2,8 @@
 
 import { useUser } from "@/lib/providers/user.provider";
 import { createClient } from "@/lib/supabase/client";
+import { toastService } from "@/lib/ui/services/toast.service";
+import { AuthError } from "@supabase/supabase-js";
 import Link from "next/link";
 import { RefObject, useEffect, useRef, useState, useTransition } from "react";
 
@@ -31,7 +33,7 @@ function ProfileButton({ ref }: { ref: RefObject<HTMLButtonElement> }) {
   );
 }
 
-type FormErrors = { email?: string; password?: string; server?: string };
+type FormErrors = { email?: string; password?: string; };
 
 function validateForm(email: string, password: string): FormErrors {
   const errs: FormErrors = {};
@@ -76,8 +78,10 @@ function SignForm() {
 
     setErrors({});
     startSubmitTransition(async () => {
+      let error: AuthError | null = null;
+
       if (mode === 'sign_up') {
-        const {error} = await auth.signUp({
+        const res = await auth.signUp({
           email,
           password,
           options: {
@@ -85,16 +89,18 @@ function SignForm() {
           },
         });
 
-        if (error) return;
+        error = res.error;
       }
 
-      const { error } = await auth.signInWithPassword({ email, password });
+      if (!error) {
+        const res = await auth.signInWithPassword({ email, password });
+        error = res.error;
+      }
+
       if (error) {
-        setErrors({ server: "Email or password is incorrect." });
+        toastService.showToast(error.message, 'error');
         return;
       }
-
-      console.warn("sucessful login!!");
     });
   }
 
@@ -278,21 +284,6 @@ function SignForm() {
           )}
         </div>
 
-        {/* Server error */}
-        {errors.server && (
-          <p
-            className="text-xs text-center rounded-lg px-3 py-2"
-            style={{
-              color: "#e05252",
-              background: "rgba(224,82,82,0.08)",
-              border: "1px solid rgba(224,82,82,0.2)",
-              fontFamily: "var(--font-dm-sans)",
-            }}
-          >
-            {errors.server}
-          </p>
-        )}
-
         {/* Submit */}
         <button
           type="submit"
@@ -432,9 +423,7 @@ function ProfileMenuContent() {
 }
 
 function ProfileMenu({ ref }: { ref: RefObject<HTMLDivElement> }) {
-  // const [content, setContent] = useState("sign_form");
   const { user } = useUser();
-  console.warn(user);
 
   return (
     <div
@@ -446,7 +435,7 @@ function ProfileMenu({ ref }: { ref: RefObject<HTMLDivElement> }) {
         boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
       }}
     >
-      {!user ? <SignForm /> : <ProfileMenuContent /> }
+      {!user ? <SignForm /> : <ProfileMenuContent />}
     </div>
   );
 }
