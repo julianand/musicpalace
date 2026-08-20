@@ -378,7 +378,7 @@ async function main() {
 
   // Reset sequences so future inserts don't collide with seeded IDs
   console.log('Resetting sequences...')
-  await prisma.$executeRaw`SELECT setval(pg_get_serial_sequence('users', 'id'), 20)`
+  await prisma.$executeRaw`SELECT setval(pg_get_serial_sequence('public.users', 'id'), 20)`
   await prisma.$executeRaw`SELECT setval(pg_get_serial_sequence('product_categories', 'id'), 7)`
   await prisma.$executeRaw`SELECT setval(pg_get_serial_sequence('products', 'id'), 50)`
   await prisma.$executeRaw`SELECT setval(pg_get_serial_sequence('reviews', 'id'), 1859)`

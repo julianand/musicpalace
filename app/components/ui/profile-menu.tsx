@@ -1,6 +1,6 @@
 "use client";
 
-import { useUser } from "@/lib/providers/app.provider";
+import { useUser } from "@/lib/providers/user.provider";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import { RefObject, useEffect, useRef, useState, useTransition } from "react";
@@ -8,7 +8,7 @@ import { RefObject, useEffect, useRef, useState, useTransition } from "react";
 function ProfileButton({ ref }: { ref: RefObject<HTMLButtonElement> }) {
   const { user } = useUser();
   const initials = user
-    ? `${user.user_metadata.firstname?.[0] ?? ""}${user.user_metadata.lastname?.[0] ?? ""}`.toUpperCase()
+    ? `${user.firstname?.[0] ?? ""}${user.lastname?.[0] ?? ""}`.toUpperCase()
     : null;
 
   return (
@@ -326,11 +326,11 @@ function SignForm() {
 }
 
 function ProfileMenuContent() {
-  const { user } = useUser();
+  const { user, userLoaded } = useUser();
   const [signingOut, startSignOutTransition] = useTransition();
 
-  const firstname = user?.user_metadata.firstname ?? "";
-  const lastname = user?.user_metadata.lastname ?? "";
+  const firstname = user?.firstname ?? "";
+  const lastname = user?.lastname ?? "";
   const email = user?.email ?? "";
   const initials = `${firstname[0] ?? ""}${lastname[0] ?? ""}`.toUpperCase();
 
@@ -452,6 +452,7 @@ function ProfileMenu({ ref }: { ref: RefObject<HTMLDivElement> }) {
 }
 
 export function ProfileContainer() {
+  const { userLoaded } = useUser();
   const buttonRef = useRef<HTMLButtonElement>(null!);
   const menuRef = useRef<HTMLDivElement>(null!);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -476,6 +477,8 @@ export function ProfileContainer() {
 
     return () => controller.abort();
   }, []);
+
+  if (!userLoaded) return <></>;
 
   return (
     <div className="relative">
