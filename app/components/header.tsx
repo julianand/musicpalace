@@ -2,6 +2,7 @@ import Link from "next/link";
 import { CartPreview } from "./ui/cart-preview";
 import { Product } from "@/types";
 import { ProfileContainer } from "./ui/profile-menu";
+import { SearchBar } from "./ui/search-bar";
 
 function Logo() {
   return (
@@ -24,48 +25,6 @@ function Logo() {
         The Music Palace
       </span>
     </Link>
-  );
-}
-
-function SearchBar() {
-  return (
-    <div className="flex-1 max-w-xl mx-auto">
-      <div
-        className="flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200"
-        style={{
-          background: "var(--surface-2)",
-          border: "1px solid var(--border)",
-        }}
-      >
-        <svg
-          className="w-4 h-4 shrink-0"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="var(--muted)"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <circle cx="11" cy="11" r="8" />
-          <path d="m21 21-4.35-4.35" />
-        </svg>
-        <input
-          type="text"
-          placeholder="Search instruments, interfaces, monitors..."
-          className="flex-1 bg-transparent text-sm outline-none placeholder:text-(--muted)"
-          style={{
-            color: "var(--foreground)",
-            fontFamily: "var(--font-dm-sans)",
-          }}
-        />
-        <kbd
-          className="hidden sm:flex items-center gap-1 px-1.5 py-0.5 rounded text-xs"
-          style={{ background: "var(--border)", color: "var(--muted)" }}
-        >
-          ⌘K
-        </kbd>
-      </div>
-    </div>
   );
 }
 
