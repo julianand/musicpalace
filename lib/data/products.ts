@@ -8,7 +8,7 @@ function formatPrice(value: number): string {
   return "$" + rounded.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
 
-const completeProduct = (
+export const completeProduct = (
   product: Product & {
     product_categories: ProductCategory;
     favorites?: { id: bigint }[];

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { CartPreview } from "./ui/cart-preview";
-import { Product } from "@/types";
+import { getCartProducts } from "@/lib/data/cart";
 import { ProfileContainer } from "./ui/profile-menu";
 import { SearchBar } from "./ui/search-bar";
 
@@ -28,8 +28,8 @@ function Logo() {
   );
 }
 
-export function Header() {
-  const cartProducts: Product[] = [];
+export async function Header() {
+  const cartProducts = await getCartProducts();
   return (
     <header
       className="sticky top-0 z-50 animate-slide-down"

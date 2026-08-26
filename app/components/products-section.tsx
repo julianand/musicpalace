@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import { ResultCount } from "./ui/result-count";
 import { PRODUCTS_MAIN_RECORD_PAGINATION, ProductSort } from "@/lib/products/filters";
 import { FavoriteButton } from "./ui/favorite-button";
+import { AddToCartButton } from "./ui/add-to-cart-button";
 
 type FilterProps = Pick<NonNullable<Parameters<typeof getProducts>[0]>, "where" | "orderBy">;
 
@@ -240,16 +241,16 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
               >
                 Read review
               </button>
-              <button
-                className="px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 cursor-pointer"
+              <AddToCartButton
+                productId={product.id}
+                label="+ Cart"
+                className="px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 cursor-pointer disabled:opacity-50"
                 style={{
                   background: "var(--amber)",
                   color: "#0c0c0e",
                   fontFamily: "var(--font-dm-sans)",
                 }}
-              >
-                + Cart
-              </button>
+              />
             </div>
           </div>
         </div>

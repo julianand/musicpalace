@@ -4,6 +4,7 @@ import "./globals.css";
 import { Header } from "./components/header";
 import { Footer } from "./components/footer";
 import { AppProvider } from "@/lib/providers/app.provider";
+import { Suspense } from "react";
 
 const playfair = Playfair_Display({
   variable: "--font-playfair",
@@ -31,7 +32,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col">
         <AppProvider>
-          <Header />
+          <Suspense>
+            <Header />
+          </Suspense>
           {children}
           {/* ───── FOOTER ───── */}
           <Footer />

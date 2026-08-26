@@ -1,7 +1,6 @@
 "use client";
 
-import { Product } from "@/types";
-import Link from "next/link";
+import { CartProduct } from "@/lib/data/cart";
 import {
   createContext,
   RefObject,
@@ -11,10 +10,11 @@ import {
   useState,
 } from "react";
 
-const CartPreviewContext = createContext({ products: [] as Product[] });
+const CartPreviewContext = createContext({ products: [] as CartProduct[] });
 
 function CartButton({ ref }: { ref: RefObject<HTMLElement> }) {
   const cartProducts = useContext(CartPreviewContext).products;
+  const totalItems = cartProducts.reduce((sum, p) => sum + p.quantity, 0);
 
   return (
     <button
@@ -38,12 +38,12 @@ function CartButton({ ref }: { ref: RefObject<HTMLElement> }) {
         <line x1="3" y1="6" x2="21" y2="6" />
         <path d="M16 10a4 4 0 0 1-8 0" />
       </svg>
-      {(cartProducts.length || "") && (
+      {(totalItems || "") && (
         <span
           className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full text-xs font-bold flex items-center justify-center"
           style={{ background: "var(--amber)", color: "#0c0c0e" }}
         >
-          {cartProducts.length}
+          {totalItems}
         </span>
       )}
     </button>
@@ -53,6 +53,7 @@ function CartButton({ ref }: { ref: RefObject<HTMLElement> }) {
 export function CartPreviewList({ ref }: { ref: RefObject<HTMLElement> }) {
   const products = useContext(CartPreviewContext).products;
   const isEmpty = products.length === 0;
+  const totalItems = products.reduce((sum, p) => sum + p.quantity, 0);
 
   return (
     <div
@@ -87,7 +88,7 @@ export function CartPreviewList({ ref }: { ref: RefObject<HTMLElement> }) {
               fontFamily: "var(--font-dm-sans)",
             }}
           >
-            {products.length} {products.length === 1 ? "item" : "items"}
+            {totalItems} {totalItems === 1 ? "item" : "items"}
           </span>
         )}
       </div>
@@ -169,44 +170,35 @@ export function CartPreviewList({ ref }: { ref: RefObject<HTMLElement> }) {
               </div>
 
               {/* Price */}
-              <span
-                className="text-sm font-bold shrink-0"
-                style={{
-                  color: "var(--amber)",
-                  fontFamily: "var(--font-playfair)",
-                }}
-              >
-                {product.formattedPrice}
-              </span>
+              <div className="flex flex-col items-end shrink-0">
+                <span
+                  className="text-sm font-bold"
+                  style={{
+                    color: "var(--amber)",
+                    fontFamily: "var(--font-playfair)",
+                  }}
+                >
+                  {product.formattedPrice}
+                </span>
+                <span
+                  className="text-xs mt-0.5"
+                  style={{
+                    color: "var(--muted)",
+                    fontFamily: "var(--font-dm-sans)",
+                  }}
+                >
+                  ×{product.quantity}
+                </span>
+              </div>
             </li>
           ))}
         </ul>
-      )}
-
-      {/* Footer — only shown when cart has items */}
-      {!isEmpty && (
-        <div
-          className="px-4 py-3"
-          style={{ borderTop: "1px solid var(--border)" }}
-        >
-          <Link
-            href="/cart"
-            className="flex items-center justify-center w-full py-2.5 rounded-xl text-sm font-semibold transition-opacity hover:opacity-90"
-            style={{
-              background: "var(--amber)",
-              color: "#0c0c0e",
-              fontFamily: "var(--font-dm-sans)",
-            }}
-          >
-            Go to cart
-          </Link>
-        </div>
       )}
     </div>
   );
 }
 
-export function CartPreview({ cartProducts }: { cartProducts: Product[] }) {
+export function CartPreview({ cartProducts }: { cartProducts: CartProduct[] }) {
   const [previewOpen, setPreviewOpen] = useState(false);
   const buttonRef = useRef<HTMLElement>(null!);
   const listRef = useRef<HTMLElement>(null!);

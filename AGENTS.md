@@ -10,12 +10,19 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 ## Tech stack
 
-- Next.js 16 (App Router)
-- React 19
+- Next.js 16.3.0 (App Router) — read `node_modules/next/dist/docs/` for breaking changes
+- React 19.2.8
 - TypeScript
 - Tailwind CSS v4
-- Prisma ORM (PostgreSQL)
-- Supabase (Auth + Database)
+- Prisma ORM 7 (PostgreSQL) with `PrismaPg` driver adapter
+- Supabase (Auth + Database, `@supabase/ssr`)
+
+## Scripts (`package.json`)
+
+- `npm run dev` — start dev server
+- `npm run build` — production build
+- `npm run lint` — `eslint` (NOT `next lint`)
+- `npm run prisma:generate` — `prisma db pull && prisma generate` (regenerate client from the live DB)
 
 ## Project conventions
 
@@ -26,11 +33,48 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 ### File naming
 - Use **kebab-case** for all component files (e.g. `related-scroll.tsx`, `product-card.tsx`). Never use PascalCase filenames.
 
+## Architecture / directory layout
+
+- `app/` — App Router pages, route handlers, and components (grouped per feature/route).
+- `app/components/ui/` — client components (buttons, toasts, search bar, etc.).
+- `lib/data/` — server-side data access layer (Prisma queries). These return domain types from `@/types`.
+- `lib/actions/` — server actions (`"use server"`).
+- `lib/providers/` — React context providers (client).
+- `lib/ui/services/` — client-side services (e.g. `toast.service.ts` singleton).
+- `lib/products/` — product domain logic (sort options, pagination constants).
+- `lib/supabase/` — Supabase SSR helpers (`client.ts` for browser, `server.ts` for server).
+- `types/index.ts` — domain types. They re-export and **augment** the Prisma models (see `Product`/`Review`). Prisma model types are imported from `@/app/generated/prisma/client`.
+- Path alias: `@/` → project root (e.g. `@/types`, `@/lib/...`).
+
+## Data layer conventions
+
+- Product queries (`getProducts`, `getProduct` in `lib/data/products.ts`) include the category relation and, when a user is logged in, the user's favorites. They map the raw row through `completeProduct`, exposing `category`, `formattedPrice`, and `favorite` fields. Do not bypass this mapping.
+- Any data function that needs the logged-in user calls `getSessionUser()` (from `lib/actions/session.ts`). It resolves the Supabase session to the app's `users` row by `auth_id`.
+- Server caching: use `"use cache"` + `cacheLife("hours")` (from `next/cache`) for stable, non-user-scoped queries (e.g. `getCategories`, `getProductCount`). Do **not** cache user-scoped queries.
+- **BigInt**: Prisma `BigInt` ids cannot cross the server/client boundary. Serialize them to strings in API routes (`p.id.toString()`) and pass them to client components as props.
+
+## Auth & favorites
+
+- Auth is Supabase SSR. `getSessionUser()` is the single source of truth for the current user on the server; `UserProvider` (`lib/providers/user.provider.tsx`) hydrates it on the client and listens to `onAuthStateChange`, calling `router.refresh()` on sign in/out.
+- Favorites: `toggleFavorite(productId: bigint)` in `lib/actions/favorites.ts` is a server action that returns a typed result (`{ success, favorite?, error? }`). The client `FavoriteButton` does optimistic updates and reports errors/notifications through the toast service.
+- Toast service: `lib/ui/services/toast.service.ts` is a singleton (subscribe/notify). `<ToastContainer />` is rendered once inside `AppProvider`.
+
+## Search
+
+- `app/api/search/route.ts` — GET endpoint, reads `?q=`, returns up to 8 matching products serialized for the client (BigInt ids → string). Used by the search bar.
+
+## Home page filters & pagination
+
+- The home page reads `?category`, `?sort`, and `?page` search params.
+- Sort options and `PRODUCTS_MAIN_RECORD_PAGINATION` (= 9) live in `lib/products/filters.ts`. New options must be added there.
+
 ## Database
 
 ### Prisma client
 - The generated client lives at `app/generated/prisma/client` — import from there, not from `@prisma/client`.
 - The client requires the `PrismaPg` driver adapter (see `lib/prisma.ts`). Never instantiate `PrismaClient` without it.
+- The schema is **introspected from the live Supabase database** (`prisma db pull`, via `npm run prisma:generate`) — the `auth` schema models are Supabase internals; don't edit them. App tables live in the `public` schema and use RLS.
+- `favorites` is a real table (added for the wishlist feature) but is **not** seeded — it holds per-user data.
 
 ### Seed / backup
 - `prisma/seed.ts` contains a full snapshot of the production data (users, product_categories, products, reviews).

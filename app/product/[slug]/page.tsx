@@ -5,6 +5,7 @@ import { RelatedProductsGrid } from './components/related-products-grid';
 import { Suspense } from "react";
 import { ProductReviews } from "./components/product-reviews";
 import { FavoriteButton } from "@/app/components/ui/favorite-button";
+import { AddToCartButton } from "@/app/components/ui/add-to-cart-button";
 
 function ProductPageSkeleton() {
   return (
@@ -202,16 +203,16 @@ async function ProductContent({ params }: { params: PageProps<"/product/[slug]">
             </div>
 
             <div className="flex items-center gap-3">
-              <button
-                className="px-8 py-3.5 rounded-2xl text-sm font-semibold transition-all duration-200 cursor-pointer"
+              <AddToCartButton
+                productId={product.id}
+                label="+ Add to Cart"
+                className="px-8 py-3.5 rounded-2xl text-sm font-semibold transition-all duration-200 cursor-pointer disabled:opacity-50"
                 style={{
                   background: product.category.accent_color,
                   color: "#0c0c0e",
                   fontFamily: "var(--font-dm-sans)",
                 }}
-              >
-                + Add to Cart
-              </button>
+              />
               <FavoriteButton
                 productId={product.id}
                 favorite={product.favorite ?? false}
