@@ -3,15 +3,14 @@
 import {
   createContext,
   ReactNode,
-  use,
   useContext,
   useEffect,
   useState,
-  useTransition,
 } from "react";
 import { createClient } from "../supabase/client";
 import { User } from "@/types";
 import { getSessionUser } from "../actions/session";
+import { useRouter } from "next/navigation";
 
 interface UserContextInterface {
   user?: User | null;
@@ -28,26 +27,26 @@ export function useUser() {
 export function UserProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [userLoaded, setUserLoaded] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     getSessionUser().then(user => {
       setUser(user);
       setUserLoaded(true);
     })
-    // startUserTransition(async() => {
-    //   const user = await getSessionUser();
-    //   setUser(user);
-    // })
 
     const supabase = createClient();
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_, session) => {
+    } = supabase.auth.onAuthStateChange((event) => {
       getSessionUser().then((user) => setUser(user));
+      if (event === "SIGNED_IN" || event === "SIGNED_OUT") {
+        router.refresh();
+      }
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [router]);
 
   return <UserContext value={{ user, userLoaded, setUser }}>{children}</UserContext>;
 }

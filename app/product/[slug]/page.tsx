@@ -4,6 +4,7 @@ import { getProduct } from "@/lib/data/products";
 import { RelatedProductsGrid } from './components/related-products-grid';
 import { Suspense } from "react";
 import { ProductReviews } from "./components/product-reviews";
+import { FavoriteButton } from "@/app/components/ui/favorite-button";
 
 function ProductPageSkeleton() {
   return (
@@ -211,17 +212,18 @@ async function ProductContent({ params }: { params: PageProps<"/product/[slug]">
               >
                 + Add to Cart
               </button>
-              <button
-                className="px-8 py-3.5 rounded-2xl text-sm font-medium transition-all duration-200 cursor-pointer"
+              <FavoriteButton
+                productId={product.id}
+                favorite={product.favorite ?? false}
+                showLabel
+                className="px-8 py-3.5 rounded-2xl text-sm font-medium transition-all duration-200 cursor-pointer inline-flex items-center justify-center gap-2 disabled:opacity-50"
                 style={{
                   background: "var(--surface-2)",
                   border: "1px solid var(--border)",
                   color: "var(--foreground)",
                   fontFamily: "var(--font-dm-sans)",
                 }}
-              >
-                Wishlist
-              </button>
+              />
             </div>
           </div>
         </section>

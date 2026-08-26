@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { ResultCount } from "./ui/result-count";
 import { PRODUCTS_MAIN_RECORD_PAGINATION, ProductSort } from "@/lib/products/filters";
+import { FavoriteButton } from "./ui/favorite-button";
 
 type FilterProps = Pick<NonNullable<Parameters<typeof getProducts>[0]>, "where" | "orderBy">;
 
@@ -103,24 +104,17 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
           </span>
 
           {/* Wishlist button */}
-          <button
-            className="absolute top-4 right-4 p-2 rounded-lg transition-all duration-200 cursor-pointer"
+          <FavoriteButton
+            productId={product.id}
+            favorite={product.favorite ?? false}
+            className="absolute top-4 right-4 p-2 rounded-lg inline-flex items-center justify-center transition-all duration-200 cursor-pointer disabled:opacity-50"
             style={{
               background: "rgba(12,12,14,0.6)",
               backdropFilter: "blur(8px)",
               border: "1px solid rgba(255,255,255,0.08)",
+              color: "var(--muted)",
             }}
-          >
-            <svg
-              className="w-4 h-4"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="var(--muted)"
-              strokeWidth="2"
-            >
-              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-            </svg>
-          </button>
+          />
 
           {/* Product icon / placeholder visual */}
           <div
