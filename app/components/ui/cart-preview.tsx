@@ -1,16 +1,132 @@
 "use client";
 
 import { CartProduct } from "@/lib/data/cart";
+import { useRouter } from "next/navigation";
+import { useUser } from "@/lib/providers/user.provider";
+import { toastService } from "@/lib/ui/services/toast.service";
 import {
   createContext,
   RefObject,
+  startTransition,
   useContext,
   useEffect,
+  useOptimistic,
   useRef,
   useState,
 } from "react";
 
-const CartPreviewContext = createContext({ products: [] as CartProduct[] });
+const CartPreviewContext = createContext<{
+  products: CartProduct[];
+  setProducts: (products: CartProduct[]) => void;
+}>({
+  products: [],
+  setProducts: undefined!,
+});
+
+function QuantityButton({
+  productId,
+  delta,
+  label,
+}: {
+  productId: bigint;
+  delta: number;
+  label: string;
+}) {
+  const { user } = useUser();
+  const router = useRouter();
+  const { products, setProducts } = useContext(CartPreviewContext);
+  const deltaRef = useRef(0);
+  const quantityRef = useRef(0);
+  const inFlightRef = useRef(false);
+
+  function sendPending() {
+    if (inFlightRef.current || deltaRef.current === 0) return;
+
+    const toSend = deltaRef.current;
+    deltaRef.current = 0;
+    inFlightRef.current = true;
+
+    fetch("/api/cart", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        productId: productId.toString(),
+        quantity: toSend,
+      }),
+    })
+      .then(async (res) => {
+        const data = await res.json();
+        inFlightRef.current = false;
+        quantityRef.current = 0;
+        if (!res.ok) {
+          toastService.showToast(
+            data.error === "unauthorized"
+              ? "Sign in to manage your cart"
+              : "Could not update cart",
+            data.error === "unauthorized" ? "info" : "error",
+          );
+          router.refresh();
+          return;
+        }
+        if (deltaRef.current !== 0) {
+          sendPending();
+        } else {
+          router.refresh();
+        }
+      })
+      .catch(() => {
+        inFlightRef.current = false;
+        quantityRef.current = 0;
+        router.refresh();
+      });
+  }
+
+  function handleClick(e: React.MouseEvent<HTMLButtonElement>) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!user) {
+      toastService.showToast("Sign in to manage your cart", "info");
+      return;
+    }
+
+    const current = products.find((p) => p.id === productId);
+    const base =
+      quantityRef.current > 0 ? quantityRef.current : (current?.quantity ?? 0);
+    quantityRef.current = base + delta;
+    deltaRef.current += delta;
+
+    startTransition(() => {
+      const newProducts = products
+        .map((p) => {
+          if (p.id !== productId) return p;
+          return { ...p, quantity: quantityRef.current };
+        })
+        .filter((p) => p.quantity > 0);
+
+      setProducts(newProducts);
+
+      sendPending();
+    });
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      aria-label={label}
+      className="w-6 h-6 rounded-lg flex items-center justify-center text-sm font-semibold transition-colors duration-200 cursor-pointer"
+      style={{
+        background: "var(--surface-2)",
+        border: "1px solid var(--border)",
+        color: "var(--foreground)",
+        fontFamily: "var(--font-dm-sans)",
+      }}
+    >
+      {delta < 0 ? "−" : "+"}
+    </button>
+  );
+}
 
 function CartButton({ ref }: { ref: RefObject<HTMLElement> }) {
   const cartProducts = useContext(CartPreviewContext).products;
@@ -47,6 +163,85 @@ function CartButton({ ref }: { ref: RefObject<HTMLElement> }) {
         </span>
       )}
     </button>
+  );
+}
+
+function CartPreviewListItem({ product }: { product: CartProduct }) {
+  return (
+    <li className="flex items-center gap-3 px-4 py-3">
+      {/* Color swatch */}
+      <div
+        className="w-10 h-10 rounded-lg shrink-0 flex items-center justify-center"
+        style={{ background: product.category.background_color }}
+      >
+        <svg
+          className="w-4 h-4"
+          viewBox="0 0 24 24"
+          fill={product.category.accent_color}
+          opacity="0.8"
+        >
+          <path d="M9 3v10.55A4 4 0 1 0 11 17V7h4V3H9z" />
+        </svg>
+      </div>
+
+      {/* Info */}
+      <div className="flex-1 min-w-0">
+        <p
+          className="text-xs font-semibold truncate leading-snug"
+          style={{
+            color: "var(--foreground)",
+            fontFamily: "var(--font-playfair)",
+          }}
+        >
+          {product.name}
+        </p>
+        <p
+          className="text-xs mt-0.5"
+          style={{
+            color: "var(--muted)",
+            fontFamily: "var(--font-dm-sans)",
+          }}
+        >
+          {product.category.name}
+        </p>
+      </div>
+
+      {/* Price */}
+      <div className="flex flex-col items-end shrink-0">
+        <span
+          className="text-sm font-bold"
+          style={{
+            color: "var(--amber)",
+            fontFamily: "var(--font-playfair)",
+          }}
+        >
+          {product.formattedPrice}
+        </span>
+        <span
+          className="text-xs mt-0.5"
+          style={{
+            color: "var(--muted)",
+            fontFamily: "var(--font-dm-sans)",
+          }}
+        >
+          ×{product.quantity}
+        </span>
+      </div>
+
+      {/* Quantity controls */}
+      <div className="flex items-center gap-1 shrink-0">
+        <QuantityButton
+          productId={product.id}
+          delta={-1}
+          label={`Remove one ${product.name}`}
+        />
+        <QuantityButton
+          productId={product.id}
+          delta={1}
+          label={`Add one ${product.name}`}
+        />
+      </div>
+    </li>
   );
 }
 
@@ -131,66 +326,7 @@ export function CartPreviewList({ ref }: { ref: RefObject<HTMLElement> }) {
           style={{ borderColor: "var(--border)" }}
         >
           {products.map((product) => (
-            <li key={product.id} className="flex items-center gap-3 px-4 py-3">
-              {/* Color swatch */}
-              <div
-                className="w-10 h-10 rounded-lg shrink-0 flex items-center justify-center"
-                style={{ background: product.category.background_color }}
-              >
-                <svg
-                  className="w-4 h-4"
-                  viewBox="0 0 24 24"
-                  fill={product.category.accent_color}
-                  opacity="0.8"
-                >
-                  <path d="M9 3v10.55A4 4 0 1 0 11 17V7h4V3H9z" />
-                </svg>
-              </div>
-
-              {/* Info */}
-              <div className="flex-1 min-w-0">
-                <p
-                  className="text-xs font-semibold truncate leading-snug"
-                  style={{
-                    color: "var(--foreground)",
-                    fontFamily: "var(--font-playfair)",
-                  }}
-                >
-                  {product.name}
-                </p>
-                <p
-                  className="text-xs mt-0.5"
-                  style={{
-                    color: "var(--muted)",
-                    fontFamily: "var(--font-dm-sans)",
-                  }}
-                >
-                  {product.category.name}
-                </p>
-              </div>
-
-              {/* Price */}
-              <div className="flex flex-col items-end shrink-0">
-                <span
-                  className="text-sm font-bold"
-                  style={{
-                    color: "var(--amber)",
-                    fontFamily: "var(--font-playfair)",
-                  }}
-                >
-                  {product.formattedPrice}
-                </span>
-                <span
-                  className="text-xs mt-0.5"
-                  style={{
-                    color: "var(--muted)",
-                    fontFamily: "var(--font-dm-sans)",
-                  }}
-                >
-                  ×{product.quantity}
-                </span>
-              </div>
-            </li>
+            <CartPreviewListItem key={product.id} product={product} />
           ))}
         </ul>
       )}
@@ -198,10 +334,11 @@ export function CartPreviewList({ ref }: { ref: RefObject<HTMLElement> }) {
   );
 }
 
-export function CartPreview({ cartProducts }: { cartProducts: CartProduct[] }) {
+export function CartPreview(params: { cartProducts: CartProduct[] }) {
   const [previewOpen, setPreviewOpen] = useState(false);
   const buttonRef = useRef<HTMLElement>(null!);
   const listRef = useRef<HTMLElement>(null!);
+  const [cartProducts, setCartProducts] = useOptimistic(params.cartProducts);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -225,7 +362,9 @@ export function CartPreview({ cartProducts }: { cartProducts: CartProduct[] }) {
   }, []);
 
   return (
-    <CartPreviewContext value={{ products: cartProducts }}>
+    <CartPreviewContext
+      value={{ products: cartProducts, setProducts: setCartProducts }}
+    >
       <div className="relative">
         <CartButton ref={buttonRef} />
         {previewOpen && <CartPreviewList ref={listRef} />}
