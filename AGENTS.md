@@ -33,6 +33,9 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 ### File naming
 - Use **kebab-case** for all component files (e.g. `related-scroll.tsx`, `product-card.tsx`). Never use PascalCase filenames.
 
+### Documenting architecture changes
+- **Any change that affects the architecture must be documented in this `AGENTS.md` as part of the same change — don't wait to be asked.** This covers: data flow / state ownership changes, new or renamed providers, API routes, server actions, hooks, DB tables/columns, file moves between the `lib/` layers, and component architecture changes. Update the relevant section (or add a new one) in the same change.
+
 ## Architecture / directory layout
 
 - `app/` — App Router pages, route handlers, and components (grouped per feature/route).
@@ -41,6 +44,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - `lib/actions/` — server actions (`"use server"`).
 - `lib/providers/` — React context providers (client).
 - `lib/ui/services/` — client-side services (e.g. `toast.service.ts` singleton).
+- `lib/ui/hooks/` — client-side hooks (e.g. `use-cart-mutation.ts`).
 - `lib/products/` — product domain logic (sort options, pagination constants).
 - `lib/supabase/` — Supabase SSR helpers (`client.ts` for browser, `server.ts` for server).
 - `types/index.ts` — domain types. They re-export and **augment** the Prisma models (see `Product`/`Review`). Prisma model types are imported from `@/app/generated/prisma/client`.
@@ -59,6 +63,21 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - Favorites: `toggleFavorite(productId: bigint)` in `lib/actions/favorites.ts` is a server action that returns a typed result (`{ success, favorite?, error? }`). The client `FavoriteButton` does optimistic updates and reports errors/notifications through the toast service.
 - Toast service: `lib/ui/services/toast.service.ts` is a singleton (subscribe/notify). `<ToastContainer />` is rendered once inside `AppProvider`.
 
+## Cart
+
+The cart is **100% client-driven** — there is no server-rendered cart badge (it starts empty and fills after the client fetch), and mutations reconcile via a `reload()`, not `router.refresh()`.
+
+- DB: the `carts` table (`schema.prisma`) is keyed by `user_id` + `product_id` with a `quantity` column (no unique constraint — the logic handles it). Not seeded; holds per-user data.
+- Data access: `getCartProducts()` and the `CartProduct` type (`Product & { quantity: number }`) live in `lib/data/cart.ts`. Server-side only, used by the API route.
+- API: `app/api/cart/route.ts` (authenticates with `getSessionUser()`):
+  - `GET /api/cart` — returns the current user's cart serialized for JSON (all BigInt ids → string: `id`, `category_id`, `review_count`, `category.id`). No session → `[]` (200).
+  - `POST /api/cart` — body `{ productId: string, quantity: number }` with **delta semantics**: positive adds, negative removes, resulting `quantity <= 0` deletes the row. Errors: `401` unauthorized, `400` invalid body/params, `404` product not found.
+- State: `CartProvider` (`lib/providers/cart.provider.tsx`) is the single client source of truth. It loads its own data on mount **and** on `onAuthStateChange` (`SIGNED_IN`/`SIGNED_OUT`) via `fetch("/api/cart")`, deserializing BigInt strings back to `BigInt` (out-of-order responses are ignored via a counter ref). It uses `useReducer` — actions: `set` (replace with server data from `reload()`) and `adjustQuantity` (**delta** semantics: adjusts the product's quantity, removes it when `<= 0`, appends from `product` when not present). Because `useReducer` applies sequential dispatches to the latest state, rapid clicks self-accumulate with no client-side ref. Exposes `{ products, dispatch, reload, loaded }` through `useCart()`.
+- Mutations: `useCartMutation(productId, { errorMessage?, unauthorizedMessage?, successMessage?, onSettled?, onSynced? })` in `lib/ui/hooks/use-cart-mutation.ts` — **single in-flight request with net-delta coalescing** (`deltaRef` + `inFlightRef`): rapid clicks never disable the button and are summed into one batch. When a batch settles it calls `onSynced` (the provider's `reload`).
+- UI: `CartButton` (`app/components/ui/cart-button.tsx`) is the single unified add/quantity button, used on product cards, the product page, and the preview rows. Props: `productId`, `label`, `delta?` (default `1`), `product?` (full `Product` for optimistic append when it isn't in the cart yet), `showSuccessToast?`, and message overrides. Optimistic updates dispatch `adjustQuantity` (delta); the session guard toasts "Sign in…" when logged out.
+- `CartPreview` (`app/components/ui/cart-preview.tsx`): badge (`CartToggleButton`) + dropdown list (`CartPreviewList` / `CartPreviewListItem`), all reading the global `useCart()`. The **whole cart lives in this preview** — there is no `/cart` page (the "Go to cart" footer link was removed).
+- `completeProduct` (`lib/data/products.ts`) is exported and reused to map cart rows.
+
 ## Search
 
 - `app/api/search/route.ts` — GET endpoint, reads `?q=`, returns up to 8 matching products serialized for the client (BigInt ids → string). Used by the search bar.
@@ -74,7 +93,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - The generated client lives at `app/generated/prisma/client` — import from there, not from `@prisma/client`.
 - The client requires the `PrismaPg` driver adapter (see `lib/prisma.ts`). Never instantiate `PrismaClient` without it.
 - The schema is **introspected from the live Supabase database** (`prisma db pull`, via `npm run prisma:generate`) — the `auth` schema models are Supabase internals; don't edit them. App tables live in the `public` schema and use RLS.
-- `favorites` is a real table (added for the wishlist feature) but is **not** seeded — it holds per-user data.
+- `favorites` and `carts` are real tables (wishlist / cart features) but are **not** seeded — they hold per-user data.
 
 ### Seed / backup
 - `prisma/seed.ts` contains a full snapshot of the production data (users, product_categories, products, reviews).

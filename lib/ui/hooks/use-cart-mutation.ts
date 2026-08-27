@@ -1,25 +1,26 @@
 "use client";
 
 import { useRef } from "react";
-import { useRouter } from "next/navigation";
-import { useUser } from "@/lib/providers/user.provider";
 import { toastService } from "@/lib/ui/services/toast.service";
 
-type AddToCartButtonProps = {
-  productId: bigint;
-  label: string;
-  className?: string;
-  style?: React.CSSProperties;
+type CartMutationOptions = {
+  errorMessage?: string;
+  unauthorizedMessage?: string;
+  successMessage?: string;
+  onSettled?: () => void;
+  onSynced?: () => void;
 };
 
-export function AddToCartButton({
-  productId,
-  label,
-  className,
-  style,
-}: AddToCartButtonProps) {
-  const { user } = useUser();
-  const router = useRouter();
+export function useCartMutation(
+  productId: bigint,
+  {
+    errorMessage = "Could not update cart",
+    unauthorizedMessage = "Sign in to manage your cart",
+    successMessage,
+    onSettled,
+    onSynced,
+  }: CartMutationOptions = {},
+) {
   const deltaRef = useRef(0);
   const inFlightRef = useRef(false);
 
@@ -41,45 +42,33 @@ export function AddToCartButton({
       .then(async (res) => {
         const data = await res.json();
         inFlightRef.current = false;
+        onSettled?.();
         if (!res.ok) {
           toastService.showToast(
-            data.error === "unauthorized"
-              ? "Sign in to add items to your cart"
-              : "Could not add to cart",
+            data.error === "unauthorized" ? unauthorizedMessage : errorMessage,
             data.error === "unauthorized" ? "info" : "error",
           );
-          router.refresh();
+          onSynced?.();
           return;
         }
-        toastService.showToast("Added to cart", "info");
+        if (successMessage) toastService.showToast(successMessage, "info");
         if (deltaRef.current !== 0) {
           sendPending();
         } else {
-          router.refresh();
+          onSynced?.();
         }
       })
       .catch(() => {
         inFlightRef.current = false;
-        router.refresh();
+        onSettled?.();
+        onSynced?.();
       });
   }
 
-  function handleClick(e: React.MouseEvent<HTMLButtonElement>) {
-    e.preventDefault();
-    e.stopPropagation();
-
-    if (!user) {
-      toastService.showToast("Sign in to add items to your cart", "info");
-      return;
-    }
-
-    deltaRef.current += 1;
+  function mutate(amount: number) {
+    deltaRef.current += amount;
     sendPending();
   }
 
-  return (
-    <button type="button" onClick={handleClick} className={className} style={style}>
-      {label}
-    </button>
-  );
+  return { mutate };
 }

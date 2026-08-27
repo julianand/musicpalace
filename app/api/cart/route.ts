@@ -1,6 +1,32 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/actions/session";
+import { CartProduct, getCartProducts } from "@/lib/data/cart";
+
+type SerializedCartProduct = Omit<
+  CartProduct,
+  "id" | "category_id" | "review_count" | "category"
+> & {
+  id: string;
+  category_id: string;
+  review_count: string | null;
+  category: Omit<CartProduct["category"], "id"> & { id: string };
+};
+
+function serialize(p: CartProduct): SerializedCartProduct {
+  return {
+    ...p,
+    id: p.id.toString(),
+    category_id: p.category_id.toString(),
+    review_count: p.review_count === null ? null : p.review_count.toString(),
+    category: { ...p.category, id: p.category.id.toString() },
+  };
+}
+
+export async function GET() {
+  const cartProducts = await getCartProducts();
+  return NextResponse.json(cartProducts.map(serialize));
+}
 
 export async function POST(request: Request) {
   const user = await getSessionUser();

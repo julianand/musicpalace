@@ -1,135 +1,12 @@
 "use client";
 
 import { CartProduct } from "@/lib/data/cart";
-import { useRouter } from "next/navigation";
-import { useUser } from "@/lib/providers/user.provider";
-import { toastService } from "@/lib/ui/services/toast.service";
-import {
-  createContext,
-  RefObject,
-  startTransition,
-  useContext,
-  useEffect,
-  useOptimistic,
-  useRef,
-  useState,
-} from "react";
+import { useCart } from "@/lib/providers/cart.provider";
+import { CartButton } from "./cart-button";
+import { RefObject, useEffect, useRef, useState } from "react";
 
-const CartPreviewContext = createContext<{
-  products: CartProduct[];
-  setProducts: (products: CartProduct[]) => void;
-}>({
-  products: [],
-  setProducts: undefined!,
-});
-
-function QuantityButton({
-  productId,
-  delta,
-  label,
-}: {
-  productId: bigint;
-  delta: number;
-  label: string;
-}) {
-  const { user } = useUser();
-  const router = useRouter();
-  const { products, setProducts } = useContext(CartPreviewContext);
-  const deltaRef = useRef(0);
-  const quantityRef = useRef(0);
-  const inFlightRef = useRef(false);
-
-  function sendPending() {
-    if (inFlightRef.current || deltaRef.current === 0) return;
-
-    const toSend = deltaRef.current;
-    deltaRef.current = 0;
-    inFlightRef.current = true;
-
-    fetch("/api/cart", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        productId: productId.toString(),
-        quantity: toSend,
-      }),
-    })
-      .then(async (res) => {
-        const data = await res.json();
-        inFlightRef.current = false;
-        quantityRef.current = 0;
-        if (!res.ok) {
-          toastService.showToast(
-            data.error === "unauthorized"
-              ? "Sign in to manage your cart"
-              : "Could not update cart",
-            data.error === "unauthorized" ? "info" : "error",
-          );
-          router.refresh();
-          return;
-        }
-        if (deltaRef.current !== 0) {
-          sendPending();
-        } else {
-          router.refresh();
-        }
-      })
-      .catch(() => {
-        inFlightRef.current = false;
-        quantityRef.current = 0;
-        router.refresh();
-      });
-  }
-
-  function handleClick(e: React.MouseEvent<HTMLButtonElement>) {
-    e.preventDefault();
-    e.stopPropagation();
-
-    if (!user) {
-      toastService.showToast("Sign in to manage your cart", "info");
-      return;
-    }
-
-    const current = products.find((p) => p.id === productId);
-    const base =
-      quantityRef.current > 0 ? quantityRef.current : (current?.quantity ?? 0);
-    quantityRef.current = base + delta;
-    deltaRef.current += delta;
-
-    startTransition(() => {
-      const newProducts = products
-        .map((p) => {
-          if (p.id !== productId) return p;
-          return { ...p, quantity: quantityRef.current };
-        })
-        .filter((p) => p.quantity > 0);
-
-      setProducts(newProducts);
-
-      sendPending();
-    });
-  }
-
-  return (
-    <button
-      type="button"
-      onClick={handleClick}
-      aria-label={label}
-      className="w-6 h-6 rounded-lg flex items-center justify-center text-sm font-semibold transition-colors duration-200 cursor-pointer"
-      style={{
-        background: "var(--surface-2)",
-        border: "1px solid var(--border)",
-        color: "var(--foreground)",
-        fontFamily: "var(--font-dm-sans)",
-      }}
-    >
-      {delta < 0 ? "−" : "+"}
-    </button>
-  );
-}
-
-function CartButton({ ref }: { ref: RefObject<HTMLElement> }) {
-  const cartProducts = useContext(CartPreviewContext).products;
+function CartToggleButton({ ref }: { ref: RefObject<HTMLElement> }) {
+  const cartProducts = useCart().products;
   const totalItems = cartProducts.reduce((sum, p) => sum + p.quantity, 0);
 
   return (
@@ -167,6 +44,13 @@ function CartButton({ ref }: { ref: RefObject<HTMLElement> }) {
 }
 
 function CartPreviewListItem({ product }: { product: CartProduct }) {
+  const compactStyle: React.CSSProperties = {
+    background: "var(--surface-2)",
+    border: "1px solid var(--border)",
+    color: "var(--foreground)",
+    fontFamily: "var(--font-dm-sans)",
+  };
+
   return (
     <li className="flex items-center gap-3 px-4 py-3">
       {/* Color swatch */}
@@ -230,15 +114,21 @@ function CartPreviewListItem({ product }: { product: CartProduct }) {
 
       {/* Quantity controls */}
       <div className="flex items-center gap-1 shrink-0">
-        <QuantityButton
+        <CartButton
           productId={product.id}
           delta={-1}
-          label={`Remove one ${product.name}`}
+          label="−"
+          ariaLabel={`Remove one ${product.name}`}
+          className="w-6 h-6 rounded-lg flex items-center justify-center text-sm font-semibold transition-colors duration-200 cursor-pointer"
+          style={compactStyle}
         />
-        <QuantityButton
+        <CartButton
           productId={product.id}
           delta={1}
-          label={`Add one ${product.name}`}
+          label="+"
+          ariaLabel={`Add one ${product.name}`}
+          className="w-6 h-6 rounded-lg flex items-center justify-center text-sm font-semibold transition-colors duration-200 cursor-pointer"
+          style={compactStyle}
         />
       </div>
     </li>
@@ -246,7 +136,7 @@ function CartPreviewListItem({ product }: { product: CartProduct }) {
 }
 
 export function CartPreviewList({ ref }: { ref: RefObject<HTMLElement> }) {
-  const products = useContext(CartPreviewContext).products;
+  const products = useCart().products;
   const isEmpty = products.length === 0;
   const totalItems = products.reduce((sum, p) => sum + p.quantity, 0);
 
@@ -334,11 +224,10 @@ export function CartPreviewList({ ref }: { ref: RefObject<HTMLElement> }) {
   );
 }
 
-export function CartPreview(params: { cartProducts: CartProduct[] }) {
+export function CartPreview() {
   const [previewOpen, setPreviewOpen] = useState(false);
   const buttonRef = useRef<HTMLElement>(null!);
   const listRef = useRef<HTMLElement>(null!);
-  const [cartProducts, setCartProducts] = useOptimistic(params.cartProducts);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -362,13 +251,9 @@ export function CartPreview(params: { cartProducts: CartProduct[] }) {
   }, []);
 
   return (
-    <CartPreviewContext
-      value={{ products: cartProducts, setProducts: setCartProducts }}
-    >
-      <div className="relative">
-        <CartButton ref={buttonRef} />
-        {previewOpen && <CartPreviewList ref={listRef} />}
-      </div>
-    </CartPreviewContext>
+    <div className="relative">
+      <CartToggleButton ref={buttonRef} />
+      {previewOpen && <CartPreviewList ref={listRef} />}
+    </div>
   );
 }

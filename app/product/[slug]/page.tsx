@@ -5,7 +5,7 @@ import { RelatedProductsGrid } from './components/related-products-grid';
 import { Suspense } from "react";
 import { ProductReviews } from "./components/product-reviews";
 import { FavoriteButton } from "@/app/components/ui/favorite-button";
-import { AddToCartButton } from "@/app/components/ui/add-to-cart-button";
+import { CartButton } from "@/app/components/ui/cart-button";
 
 function ProductPageSkeleton() {
   return (
@@ -203,10 +203,14 @@ async function ProductContent({ params }: { params: PageProps<"/product/[slug]">
             </div>
 
             <div className="flex items-center gap-3">
-              <AddToCartButton
+              <CartButton
                 productId={product.id}
+                product={product}
                 label="+ Add to Cart"
-                className="px-8 py-3.5 rounded-2xl text-sm font-semibold transition-all duration-200 cursor-pointer disabled:opacity-50"
+                showSuccessToast
+                errorMessage="Could not add to cart"
+                unauthorizedMessage="Sign in to add items to your cart"
+                className="px-8 py-3.5 rounded-2xl text-sm font-semibold transition-all duration-200 cursor-pointer"
                 style={{
                   background: product.category.accent_color,
                   color: "#0c0c0e",

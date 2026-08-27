@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { CartPreview } from "./ui/cart-preview";
-import { getCartProducts } from "@/lib/data/cart";
 import { ProfileContainer } from "./ui/profile-menu";
 import { SearchBar } from "./ui/search-bar";
 
@@ -28,8 +27,7 @@ function Logo() {
   );
 }
 
-export async function Header() {
-  const cartProducts = await getCartProducts();
+export function Header() {
   return (
     <header
       className="sticky top-0 z-50 animate-slide-down"
@@ -45,7 +43,7 @@ export async function Header() {
 
         {/* Actions */}
         <div className="flex items-center gap-3 shrink-0">
-          <CartPreview cartProducts={cartProducts} />
+          <CartPreview />
           <ProfileContainer />
         </div>
       </div>
