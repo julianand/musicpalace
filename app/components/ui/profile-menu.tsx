@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { toastService } from "@/lib/ui/services/toast.service";
 import { AuthError } from "@supabase/supabase-js";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { RefObject, useEffect, useRef, useState, useTransition } from "react";
 
 function ProfileButton({ ref }: { ref: RefObject<HTMLButtonElement> }) {
@@ -445,6 +446,13 @@ export function ProfileContainer() {
   const buttonRef = useRef<HTMLButtonElement>(null!);
   const menuRef = useRef<HTMLDivElement>(null!);
   const [menuOpen, setMenuOpen] = useState(false);
+  const pathname = usePathname();
+
+  useEffect(() => {
+    // Close the menu on route change (navigation resets menu state).
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMenuOpen(false);
+  }, [pathname]);
 
   useEffect(() => {
     const controller = new AbortController();

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useUser } from "@/lib/providers/user.provider";
-import { toggleFavorite } from "@/lib/actions/favorites";
+import { toggleFavorite } from "@/lib/actions/favorites.action";
 import { toastService } from "@/lib/ui/services/toast.service";
 
 function HeartIcon({ filled }: { filled: boolean }) {

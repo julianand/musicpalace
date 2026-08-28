@@ -1,6 +1,6 @@
 import { Product } from "@/types";
 import { prisma } from "../prisma";
-import { getSessionUser } from "../actions/session";
+import { getSessionUser } from "../actions/session.action";
 import { completeProduct } from "./products";
 
 export type CartProduct = Product & {

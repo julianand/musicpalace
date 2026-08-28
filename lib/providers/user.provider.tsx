@@ -9,7 +9,7 @@ import {
 } from "react";
 import { createClient } from "../supabase/client";
 import { User } from "@/types";
-import { getSessionUser } from "../actions/session";
+import { getSessionUser } from "../actions/session.action";
 import { useRouter } from "next/navigation";
 
 interface UserContextInterface {

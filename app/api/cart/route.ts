@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getSessionUser } from "@/lib/actions/session";
+import { getSessionUser } from "@/lib/actions/session.action";
 import { CartProduct, getCartProducts } from "@/lib/data/cart";
 
 type SerializedCartProduct = Omit<

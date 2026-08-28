@@ -53,14 +53,14 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 ## Data layer conventions
 
 - Product queries (`getProducts`, `getProduct` in `lib/data/products.ts`) include the category relation and, when a user is logged in, the user's favorites. They map the raw row through `completeProduct`, exposing `category`, `formattedPrice`, and `favorite` fields. Do not bypass this mapping.
-- Any data function that needs the logged-in user calls `getSessionUser()` (from `lib/actions/session.ts`). It resolves the Supabase session to the app's `users` row by `auth_id`.
+- Any data function that needs the logged-in user calls `getSessionUser()` (from `lib/actions/session.action.ts`). It resolves the Supabase session to the app's `users` row by `auth_id`.
 - Server caching: use `"use cache"` + `cacheLife("hours")` (from `next/cache`) for stable, non-user-scoped queries (e.g. `getCategories`, `getProductCount`). Do **not** cache user-scoped queries.
 - **BigInt**: Prisma `BigInt` ids cannot cross the server/client boundary. Serialize them to strings in API routes (`p.id.toString()`) and pass them to client components as props.
 
 ## Auth & favorites
 
 - Auth is Supabase SSR. `getSessionUser()` is the single source of truth for the current user on the server; `UserProvider` (`lib/providers/user.provider.tsx`) hydrates it on the client and listens to `onAuthStateChange`, calling `router.refresh()` on sign in/out.
-- Favorites: `toggleFavorite(productId: bigint)` in `lib/actions/favorites.ts` is a server action that returns a typed result (`{ success, favorite?, error? }`). The client `FavoriteButton` does optimistic updates and reports errors/notifications through the toast service.
+- Favorites: `toggleFavorite(productId: bigint)` in `lib/actions/favorites.action.ts` is a server action that returns a typed result (`{ success, favorite?, error? }`). The client `FavoriteButton` does optimistic updates and reports errors/notifications through the toast service.
 - Toast service: `lib/ui/services/toast.service.ts` is a singleton (subscribe/notify). `<ToastContainer />` is rendered once inside `AppProvider`.
 
 ## Cart
@@ -77,6 +77,16 @@ The cart is **100% client-driven** — there is no server-rendered cart badge (i
 - UI: `CartButton` (`app/components/ui/cart-button.tsx`) is the single unified add/quantity button, used on product cards, the product page, and the preview rows. Props: `productId`, `label`, `delta?` (default `1`), `product?` (full `Product` for optimistic append when it isn't in the cart yet), `showSuccessToast?`, and message overrides. Optimistic updates dispatch `adjustQuantity` (delta); the session guard toasts "Sign in…" when logged out.
 - `CartPreview` (`app/components/ui/cart-preview.tsx`): badge (`CartToggleButton`) + dropdown list (`CartPreviewList` / `CartPreviewListItem`), all reading the global `useCart()`. The **whole cart lives in this preview** — there is no `/cart` page (the "Go to cart" footer link was removed).
 - `completeProduct` (`lib/data/products.ts`) is exported and reused to map cart rows.
+
+## Purchases
+
+Purchases snapshot the cart at checkout time. The server is the source of truth — the client never sends product payloads.
+
+- DB: `purchases` (id, `created_at`, `user_id`, `total`) + `purchase_items` (id, `product_id`, `purchase_id`, `quantity`, `unit_price`) — already introspected tables, not seeded. `total`/`unit_price` are stored `Int` cents-less prices.
+- Server action: `createPurchase()` in `lib/actions/purchases.action.ts` — `"use server"`, returns a typed result `{ success, error? }` (`"unauthorized"` / `"empty_cart"`). It reads the user's `carts` rows, then in one `prisma.$transaction` creates the `purchases` row (total = Σ `quantity × products.price`), `createMany`s the `purchase_items`, and `carts.deleteMany` for the user.
+- Data access: `getPurchases()` in `lib/data/purchases.ts` returns `PurchaseWithItems[]` (`purchase & { items: (purchase_item & { product: Product })[] }`), mapping each item's product through `completeProduct`. Ordered `created_at: desc`.
+- Checkout UI: `CartCheckoutButton` (`app/components/ui/cart-checkout-button.tsx`) renders in the `CartPreviewList` footer, only when the cart has items **and** a user is logged in. On click it runs `createPurchase()` in a `useTransition`; while pending it shows a **full-screen fixed overlay** (`z-[100]`) that blocks the whole page. On success it calls `reload()` (clears the client cart) then `router.push("/purchases")`; on failure it toasts and stays put.
+- Page: `app/purchases/page.tsx` is a server component that `redirect("/")`s when unauthenticated and renders the user's purchases (date, total, items with quantity × unit price).
 
 ## Search
 

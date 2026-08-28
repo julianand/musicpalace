@@ -3,7 +3,9 @@
 import { CartProduct } from "@/lib/data/cart";
 import { useCart } from "@/lib/providers/cart.provider";
 import { CartButton } from "./cart-button";
+import { CartCheckoutButton } from "./cart-checkout-button";
 import { RefObject, useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 
 function CartToggleButton({ ref }: { ref: RefObject<HTMLElement> }) {
   const cartProducts = useCart().products;
@@ -139,6 +141,9 @@ export function CartPreviewList({ ref }: { ref: RefObject<HTMLElement> }) {
   const products = useCart().products;
   const isEmpty = products.length === 0;
   const totalItems = products.reduce((sum, p) => sum + p.quantity, 0);
+  const total = products.reduce((sum, p) => sum + p.price * p.quantity, 0);
+  const formattedTotal =
+    "$" + total.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 
   return (
     <div
@@ -220,6 +225,37 @@ export function CartPreviewList({ ref }: { ref: RefObject<HTMLElement> }) {
           ))}
         </ul>
       )}
+
+      {/* Footer */}
+      {!isEmpty && (
+        <div
+          className="px-4 py-3 flex flex-col gap-3"
+          style={{ borderTop: "1px solid var(--border)" }}
+        >
+          {/* Total */}
+          <div className="flex items-center justify-between">
+            <span
+              className="text-sm font-semibold"
+              style={{
+                color: "var(--muted)",
+                fontFamily: "var(--font-dm-sans)",
+              }}
+            >
+              Total
+            </span>
+            <span
+              className="text-lg font-bold"
+              style={{
+                fontFamily: "var(--font-playfair)",
+                color: "var(--foreground)",
+              }}
+            >
+              {formattedTotal}
+            </span>
+          </div>
+          <CartCheckoutButton />
+        </div>
+      )}
     </div>
   );
 }
@@ -228,6 +264,13 @@ export function CartPreview() {
   const [previewOpen, setPreviewOpen] = useState(false);
   const buttonRef = useRef<HTMLElement>(null!);
   const listRef = useRef<HTMLElement>(null!);
+  const pathname = usePathname();
+
+  useEffect(() => {
+    // Close the dropdown on route change (navigation resets menu state).
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setPreviewOpen(false);
+  }, [pathname]);
 
   useEffect(() => {
     const controller = new AbortController();

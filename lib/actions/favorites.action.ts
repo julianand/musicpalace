@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "../prisma";
-import { getSessionUser } from "./session";
+import { getSessionUser } from "./session.action";
 
 export type ToggleFavoriteResult = {
   success: boolean;

@@ -1,7 +1,7 @@
 import { Product, ProductCategory } from "@/types";
 import { prisma } from "../prisma";
 import { cacheLife } from "next/cache";
-import { getSessionUser } from "../actions/session";
+import { getSessionUser } from "../actions/session.action";
 
 function formatPrice(value: number): string {
   const rounded = Math.round(value);
