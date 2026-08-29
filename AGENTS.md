@@ -94,6 +94,15 @@ Purchases snapshot the cart at checkout time. The server is the source of truth 
 - Checkout UI: `CartCheckoutButton` (`app/components/ui/cart-checkout-button.tsx`) renders in the `CartPreviewList` footer, only when the cart has items **and** a user is logged in. On click it runs `createPurchase()` in a `useTransition` (guarded by an in-flight ref so double-clicks can't create duplicate purchases); while pending it shows a **full-screen fixed overlay** (`z-[100]`) that blocks the whole page. On success it calls `reload()` (clears the client cart) then `router.push("/purchases")`; on failure it toasts and stays put.
 - Page: `app/purchases/page.tsx` is a server component that `redirect("/")`s when unauthenticated and renders the user's purchases (date, total, items with quantity × unit price).
 
+## Reviews
+
+Product reviews are purchase-gated: only a logged-in user who has purchased the product can review it, and each user gets at most **one** review per product (editable, never duplicated).
+
+- DB: the `reviews` table (`public` schema) — `id`, `created_at`, four sub-ratings (`sound_quality`, `build_quality`, `value`, `ease_of_use`, `SmallInt`), `comment` (nullable), `user_id`, `product_id`, and `overall` (DB-generated = rounded average of the four sub-ratings). **No** unique constraint on `(user_id, product_id)` — the one-per-user-per-product guarantee is enforced in code, not by the DB (same convention as `carts`).
+- Server action: `upsertReview()` in `lib/actions/reviews.action.ts` — `"use server"`, returns a typed `{ success, error? }` (`"unauthorized"` / `"not_found"` / `"not_purchased"` / `"invalid_input"`). It validates ratings are integers 1–5 and comment ≤ 500 chars, checks the product exists and that the user has a matching `purchase_items` row, then in one `prisma.$transaction` does `findFirst` → `update` (existing review) or `create` (new). Ends with `updateTag("reviews")` (read-your-own-writes, so the client's `router.refresh()` shows the change immediately). It does **not** write the product's aggregate fields — a DB trigger handles that (see Database triggers).
+- Data access: `getReviews()` in `lib/data/reviews.ts` is cached (`"use cache"` + `cacheLife("hours")`) and tagged `"reviews"`, so `updateTag("reviews")` invalidates it after a mutation. `getReviewState(productId)` returns `{ purchased, review: SerializedReview | null }` (`null` when logged out) to drive the form — user-scoped, **not** cached. `SerializedReview` serializes the BigInt `id` to a string.
+- UI: `ReviewForm` (`app/product/[slug]/components/review-form.tsx`) renders at the top of the `ProductReviews` panel — four interactive 1–5 star inputs + an optional comment. States: logged out → disabled + "Sign in to leave a review"; logged in but not purchased → disabled + "You must purchase this product to leave a review" + an `Add to Cart` button; purchased without review → enabled create; purchased with review → enabled edit pre-filled. It submits via `upsertReview` in a `useTransition` (in-flight ref guard) and calls `router.refresh()` on success. `ProductReviews` (`app/product/[slug]/components/product-reviews.tsx`) is async and passes `getReviewState` down.
+
 ## Search
 
 - `app/api/search/route.ts` — GET endpoint, reads `?q=`, returns up to 8 matching products serialized for the client (BigInt ids → string). Used by the search bar.
@@ -112,13 +121,16 @@ Purchases snapshot the cart at checkout time. The server is the source of truth 
 - The schema is **introspected from the live Supabase database** (`prisma db pull`, via `npm run prisma:generate`) — the `auth` schema models are Supabase internals; don't edit them. App tables live in the `public` schema and use RLS.
 - `favorites` and `carts` are real tables (wishlist / cart features) but are **not** seeded — they hold per-user data.
 
+### Database triggers (managed in Supabase)
+These run in the live DB — don't replicate their work in Prisma code:
+- `trg_update_product_ratings` — `AFTER INSERT OR UPDATE ON public.reviews` → recomputes `products.overall_sound_quality`, `overall_build_quality`, `overall_value`, `overall_ease_of_use`, `overall_rating`, and `review_count`. So review mutations (create/edit) must **not** update product aggregates. Note: it does **not** fire on `DELETE` — if review deletion is ever added, recompute the aggregates in code.
+- `trg_set_product_slug` — `BEFORE INSERT ON public.products` → auto-generates `products.slug`. Products can't be created from the app yet, but this applies whenever that lands.
+
 ### Seed / backup
 - `prisma/seed.ts` contains a full snapshot of the production data (users, product_categories, products, reviews).
 - It is idempotent: uses `upsert` on every record, so it can be re-run safely without duplicating data.
 - After inserting, it resets PostgreSQL sequences so future `autoincrement()` IDs don't collide.
 - Configured in `package.json` under `"prisma": { "seed": "tsx prisma/seed.ts" }`.
-
-> **Known, expected build error:** `next build` / `tsc` fails in `prisma/seed.ts` with `TS2737: BigInt literals are not available when targeting lower than ES2020` (the `tsconfig.json` `target` is `ES2017`). This is **normal** — do not fix it and do not flag it as a regression. Skip `prisma/seed.ts` when validating type checks/builds unless explicitly asked to address it.
 
 **To recreate the database from scratch:**
 ```bash

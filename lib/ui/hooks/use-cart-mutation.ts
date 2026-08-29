@@ -54,8 +54,6 @@ export function useCartMutation(
         if (successMessage) toastService.showToast(successMessage, "info");
         if (deltaRef.current !== 0) {
           sendPending();
-        } else {
-          onSynced?.();
         }
       })
       .catch(() => {

@@ -1,6 +1,7 @@
-import { getReviews } from "@/lib/data/reviews";
+import { getReviews, getReviewState } from "@/lib/data/reviews";
 import { Product, Review } from "@/types";
 import { Suspense } from "react";
+import { ReviewForm } from "./review-form";
 
 function ReviewItemsSkeleton() {
   return (
@@ -192,7 +193,9 @@ async function ReviewItems({ product }: { product: Product }) {
   );
 }
 
-export function ProductReviews({ product }: { product: Product }) {
+export async function ProductReviews({ product }: { product: Product }) {
+  const reviewState = await getReviewState(product.id);
+
   return (
     <div
       className="lg:col-span-2 rounded-2xl p-8 flex flex-col gap-6"
@@ -226,6 +229,14 @@ export function ProductReviews({ product }: { product: Product }) {
           {product.review_count}
         </span>
       </div>
+
+      <ReviewForm
+        productId={product.id.toString()}
+        accentColor={product.category.accent_color}
+        state={reviewState}
+      />
+
+      <div style={{ height: "1px", background: "var(--border)" }} />
 
       {!product.review_count ? (
         <p
