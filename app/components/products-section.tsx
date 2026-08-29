@@ -6,6 +6,7 @@ import { ResultCount } from "./ui/result-count";
 import { PRODUCTS_MAIN_RECORD_PAGINATION, ProductSort } from "@/lib/products/filters";
 import { FavoriteButton } from "./ui/favorite-button";
 import { CartButton } from "./ui/cart-button";
+import { StarRating } from "./ui/star-rating";
 
 type FilterProps = Pick<NonNullable<Parameters<typeof getProducts>[0]>, "where" | "orderBy">;
 
@@ -31,54 +32,9 @@ function getFilterProps(
   };
 }
 
-function StarRating({ rating }: { rating: number }) {
-  const full = Math.floor(rating);
-  const partial = rating % 1;
-  const empty = 5 - Math.ceil(rating);
-
-  return (
-    <div className="flex items-center gap-0.5">
-      {Array.from({ length: full }).map((_, i) => (
-        <svg
-          key={`f-${i}`}
-          className="w-3.5 h-3.5"
-          viewBox="0 0 24 24"
-          fill="#f0a500"
-        >
-          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-        </svg>
-      ))}
-      {partial > 0 && (
-        <svg className="w-3.5 h-3.5" viewBox="0 0 24 24">
-          <defs>
-            <linearGradient id={`partial-${rating}`}>
-              <stop offset={`${partial * 100}%`} stopColor="#f0a500" />
-              <stop offset={`${partial * 100}%`} stopColor="#2a2a32" />
-            </linearGradient>
-          </defs>
-          <path
-            d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
-            fill={`url(#partial-${rating})`}
-          />
-        </svg>
-      )}
-      {Array.from({ length: empty }).map((_, i) => (
-        <svg
-          key={`e-${i}`}
-          className="w-3.5 h-3.5"
-          viewBox="0 0 24 24"
-          fill="#2a2a32"
-        >
-          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-        </svg>
-      ))}
-    </div>
-  );
-}
-
 function ProductCard({ product, index }: { product: Product; index: number }) {
   return (
-    <Link href={`/product/${product.slug}`} prefetch={"auto"}>
+    <Link href={`/product/${product.slug}`}>
       <article
         className={`animate-fade-in-up card-delay-${index + 1} rounded-2xl overflow-hidden flex flex-col group cursor-pointer`}
         style={{
@@ -180,7 +136,7 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
 
           {/* Rating row */}
           <div className="flex items-center gap-2">
-            <StarRating rating={product.overall_rating!} />
+            <StarRating rating={product.overall_rating!} size="sm" />
             <span
               className="text-xs"
               style={{
@@ -261,6 +217,28 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
   );
 }
 
+function ProductGridSkeleton() {
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      {Array.from({ length: 9 }).map((_, i) => (
+        <div
+          key={i}
+          className="rounded-2xl overflow-hidden"
+          style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
+        >
+          <div className="h-52 animate-pulse" style={{ background: "var(--surface-2)" }} />
+          <div className="p-5 flex flex-col gap-3">
+            <div className="h-4 w-3/4 rounded-full animate-pulse" style={{ background: "var(--surface-2)" }} />
+            <div className="h-3 w-1/2 rounded-full animate-pulse" style={{ background: "var(--surface-2)" }} />
+            <div className="h-3 w-full rounded-full animate-pulse" style={{ background: "var(--surface-2)" }} />
+            <div className="h-6 w-20 rounded-lg animate-pulse" style={{ background: "var(--surface-2)" }} />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 async function Grid({ pageProps }: { pageProps: PageProps<"/"> }) {
   const searchParams = (await pageProps.searchParams) as Record<
     string,
@@ -300,10 +278,10 @@ export async function ProductsSection({
 
   return (
     <main className="flex-1 max-w-7xl mx-auto px-6 py-12 w-full">
-      <Suspense>
+      <Suspense fallback={<div className="h-4 w-40 mb-8 rounded-full animate-pulse" style={{ background: "var(--surface-2)" }} />}>
         <ResultCount productCount={productCount} />
       </Suspense>
-      <Suspense>
+      <Suspense fallback={<ProductGridSkeleton />}>
         <Grid pageProps={pageProps} />
       </Suspense>
     </main>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useTransition } from "react";
+import { useRef, useTransition } from "react";
 import { useCart } from "@/lib/providers/cart.provider";
 import { useUser } from "@/lib/providers/user.provider";
 import { createPurchase } from "@/lib/actions/purchases.action";
@@ -11,25 +11,33 @@ export function CartCheckoutButton() {
   const { user } = useUser();
   const { products, reload } = useCart();
   const [purchasing, startPurchaseTransition] = useTransition();
+  const inFlightRef = useRef(false);
   const router = useRouter();
 
   if (!user || products.length === 0) return null;
 
   function handlePurchase() {
+    if (inFlightRef.current) return;
+    inFlightRef.current = true;
+
     startPurchaseTransition(async () => {
-      const result = await createPurchase();
+      try {
+        const result = await createPurchase();
 
-      if (!result.success) {
-        if (result.error === "unauthorized") {
-          toastService.showToast("Sign in to purchase", "info");
-        } else {
-          toastService.showToast("Could not complete purchase", "error");
+        if (!result.success) {
+          if (result.error === "unauthorized") {
+            toastService.showToast("Sign in to purchase", "info");
+          } else {
+            toastService.showToast("Could not complete purchase", "error");
+          }
+          return;
         }
-        return;
-      }
 
-      reload();
-      router.push("/purchases");
+        reload();
+        router.push("/purchases");
+      } finally {
+        inFlightRef.current = false;
+      }
     });
   }
 

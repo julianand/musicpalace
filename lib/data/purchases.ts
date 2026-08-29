@@ -1,7 +1,7 @@
 import { Product, Purchase, PurchaseItem } from "@/types";
 import { prisma } from "../prisma";
 import { getSessionUser } from "../actions/session.action";
-import { completeProduct } from "./products";
+import { CompleteProductRow, completeProduct } from "./products";
 
 export type PurchaseWithItems = Purchase & {
   items: (PurchaseItem & { product: Product })[];
@@ -29,7 +29,7 @@ export async function getPurchases(): Promise<PurchaseWithItems[]> {
     ...purchase,
     items: purchase_items.map((item) => ({
       ...item,
-      product: completeProduct(item.products as never),
+      product: completeProduct(item.products as CompleteProductRow),
     })),
   }));
 }

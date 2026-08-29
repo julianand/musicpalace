@@ -24,6 +24,11 @@ body {
   font-family: var(--font-geist-sans), Arial, sans-serif;
 }
 
+:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: 2px;
+}
+
 @keyframes fadeInUp {
   from {
     opacity: 0;
@@ -113,4 +118,21 @@ body {
 
 .animate-toast-exit {
   animation: toastExit 0.2s ease forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in-up,
+  .animate-slide-down,
+  .animate-toast-enter,
+  .animate-toast-exit,
+  .card-delay-1,
+  .card-delay-2,
+  .card-delay-3,
+  .card-delay-4,
+  .card-delay-5,
+  .card-delay-6 {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
 }

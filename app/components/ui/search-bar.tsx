@@ -174,7 +174,9 @@ export function SearchBar() {
         }
         console.error("Search error:", error);
       } finally {
-        setIsLoading(false);
+        if (abortControllerRef.current === controller) {
+          setIsLoading(false);
+        }
       }
     }, 300);
 
@@ -205,7 +207,7 @@ export function SearchBar() {
   return (
     <div className="flex-1 max-w-xl mx-auto relative" ref={containerRef}>
       <div
-        className="flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200"
+        className="flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 focus-within:border-(--amber)"
         style={{
           background: "var(--surface-2)",
           border: "1px solid var(--border)",

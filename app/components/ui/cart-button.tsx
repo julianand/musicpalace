@@ -1,7 +1,7 @@
 "use client";
 
 import { useUser } from "@/lib/providers/user.provider";
-import { useCart } from "@/lib/providers/cart.provider";
+import { useCartActions } from "@/lib/providers/cart.provider";
 import { useCartMutation } from "@/lib/ui/hooks/use-cart-mutation";
 import { toastService } from "@/lib/ui/services/toast.service";
 import { Product } from "@/types";
@@ -34,7 +34,7 @@ export function CartButton({
   unauthorizedMessage = "Sign in to manage your cart",
 }: CartButtonProps) {
   const { user } = useUser();
-  const { dispatch, reload } = useCart();
+  const { dispatch, reload } = useCartActions();
   const { mutate } = useCartMutation(productId, {
     errorMessage,
     unauthorizedMessage,

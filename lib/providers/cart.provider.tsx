@@ -13,6 +13,7 @@ import {
 import { CartProduct } from "@/lib/data/cart";
 import { createClient } from "../supabase/client";
 import { Product } from "@/types";
+import { SerializedCartProduct, deserialize } from "@/lib/cart-serialization";
 
 export type CartAction =
   | { type: "set"; products: CartProduct[] }
@@ -43,42 +44,36 @@ export function cartReducer(
   }
 }
 
-interface CartContextInterface {
+interface CartStateInterface {
   products: CartProduct[];
-  dispatch: (action: CartAction) => void;
-  reload: () => void;
   loaded: boolean;
 }
 
-const CartContext = createContext<CartContextInterface>({
+interface CartActionsInterface {
+  dispatch: (action: CartAction) => void;
+  reload: () => void;
+}
+
+const CartStateContext = createContext<CartStateInterface>({
   products: [],
-  dispatch: undefined!,
-  reload: undefined!,
   loaded: false,
 });
 
-export function useCart() {
-  return useContext(CartContext);
+const CartActionsContext = createContext<CartActionsInterface>({
+  dispatch: undefined!,
+  reload: undefined!,
+});
+
+export function useCartState() {
+  return useContext(CartStateContext);
 }
 
-type SerializedCartProduct = Omit<
-  CartProduct,
-  "id" | "category_id" | "review_count" | "category"
-> & {
-  id: string;
-  category_id: string;
-  review_count: string | null;
-  category: Omit<CartProduct["category"], "id"> & { id: string };
-};
+export function useCartActions() {
+  return useContext(CartActionsContext);
+}
 
-function deserialize(raw: SerializedCartProduct): CartProduct {
-  return {
-    ...raw,
-    id: BigInt(raw.id),
-    category_id: BigInt(raw.category_id),
-    review_count: raw.review_count === null ? null : BigInt(raw.review_count),
-    category: { ...raw.category, id: BigInt(raw.category.id) },
-  };
+export function useCart() {
+  return { ...useCartState(), ...useCartActions() };
 }
 
 export function CartProvider({ children }: { children: ReactNode }) {
@@ -119,8 +114,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [load]);
 
   return (
-    <CartContext value={{ products, dispatch, reload: load, loaded }}>
-      {children}
-    </CartContext>
+    <CartStateContext value={{ products, loaded }}>
+      <CartActionsContext value={{ dispatch, reload: load }}>
+        {children}
+      </CartActionsContext>
+    </CartStateContext>
   );
 }

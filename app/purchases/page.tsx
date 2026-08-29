@@ -1,13 +1,14 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import type { Metadata } from "next";
 import { getSessionUser } from "@/lib/actions/session.action";
 import { getPurchases } from "@/lib/data/purchases";
 import { PurchaseWithItems } from "@/lib/data/purchases";
+import { formatPrice } from "@/lib/products/format";
 
-function formatPrice(value: number): string {
-  const rounded = Math.round(value);
-  return "$" + rounded.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-}
+export const metadata: Metadata = {
+  title: "Your Purchases | The Music Palace",
+};
 
 function formatDate(date: Date): string {
   return new Date(date).toLocaleDateString("en-US", {
@@ -67,7 +68,7 @@ function PurchaseCard({ purchase }: { purchase: PurchaseWithItems }) {
       {/* Items */}
       <ul className="divide-y" style={{ borderColor: "var(--border)" }}>
         {purchase.items.map((item) => (
-          <li key={item.id} className="flex items-center gap-4 px-6 py-4">
+          <li key={String(item.id)} className="flex items-center gap-4 px-6 py-4">
             {/* Color swatch */}
             <Link
               href={`/product/${item.product.slug}`}
@@ -187,7 +188,7 @@ export default async function PurchasesPage() {
       ) : (
         <div className="flex flex-col gap-6">
           {purchases.map((purchase) => (
-            <PurchaseCard key={purchase.id} purchase={purchase} />
+            <PurchaseCard key={String(purchase.id)} purchase={purchase} />
           ))}
         </div>
       )}

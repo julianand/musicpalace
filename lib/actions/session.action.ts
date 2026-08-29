@@ -1,11 +1,12 @@
 "use server";
 
 import { cookies } from "next/headers";
+import { cache } from "react";
 import { createClient } from "../supabase/server";
 import { prisma } from "../prisma";
 import { User } from "@/types";
 
-export async function getSessionUser(): Promise<User | null> {
+export const getSessionUser = cache(async (): Promise<User | null> => {
   const cookieStore = await cookies();
   const supabase = createClient(cookieStore);
   const {
@@ -14,4 +15,4 @@ export async function getSessionUser(): Promise<User | null> {
   if (!session?.user) return null;
 
   return prisma.users.findFirst({ where: { auth_id: session.user.id } });
-}
+});

@@ -8,7 +8,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { RefObject, useEffect, useRef, useState, useTransition } from "react";
 
-function ProfileButton({ ref }: { ref: RefObject<HTMLButtonElement> }) {
+function ProfileButton({
+  ref,
+  isOpen,
+}: {
+  ref: RefObject<HTMLButtonElement>;
+  isOpen: boolean;
+}) {
   const { user } = useUser();
   const initials = user
     ? `${user.firstname?.[0] ?? ""}${user.lastname?.[0] ?? ""}`.toUpperCase()
@@ -17,6 +23,10 @@ function ProfileButton({ ref }: { ref: RefObject<HTMLButtonElement> }) {
   return (
     <button
       ref={ref}
+      type="button"
+      aria-label="Account menu"
+      aria-haspopup="menu"
+      aria-expanded={isOpen}
       className="w-9 h-9 rounded-xl flex items-center justify-center text-sm font-semibold transition-all duration-200 cursor-pointer"
       style={{
         background: "linear-gradient(135deg, #f0a500 0%, #a06e00 100%)",
@@ -318,7 +328,7 @@ function SignForm() {
 }
 
 function ProfileMenuContent() {
-  const { user, userLoaded } = useUser();
+  const { user } = useUser();
   const [signingOut, startSignOutTransition] = useTransition();
 
   const firstname = user?.firstname ?? "";
@@ -472,15 +482,21 @@ export function ProfileContainer() {
       { signal: controller.signal },
     );
 
+    window.addEventListener(
+      "keydown",
+      (e) => {
+        if (e.key === "Escape") setMenuOpen(false);
+      },
+      { signal: controller.signal },
+    );
+
     return () => controller.abort();
   }, []);
 
-  if (!userLoaded) return <></>;
-
   return (
     <div className="relative">
-      <ProfileButton ref={buttonRef} />
-      {menuOpen && <ProfileMenu ref={menuRef} />}
+      <ProfileButton ref={buttonRef} isOpen={menuOpen} />
+      {menuOpen && userLoaded && <ProfileMenu ref={menuRef} />}
     </div>
   );
 }

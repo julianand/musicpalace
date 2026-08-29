@@ -1,87 +1,14 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import type { Metadata } from "next";
 import { getProduct } from "@/lib/data/products";
 import { RelatedProductsGrid } from './components/related-products-grid';
 import { Suspense } from "react";
 import { ProductReviews } from "./components/product-reviews";
 import { FavoriteButton } from "@/app/components/ui/favorite-button";
 import { CartButton } from "@/app/components/ui/cart-button";
-
-function ProductPageSkeleton() {
-  return (
-    <div className="max-w-6xl mx-auto px-6 py-10 animate-pulse">
-      {/* Breadcrumb */}
-      <div className="flex items-center gap-2 mb-10">
-        <div className="h-3 w-10 rounded-full" style={{ background: "var(--surface-2)" }} />
-        <div className="h-3 w-3 rounded-full" style={{ background: "var(--surface-2)" }} />
-        <div className="h-3 w-20 rounded-full" style={{ background: "var(--surface-2)" }} />
-        <div className="h-3 w-3 rounded-full" style={{ background: "var(--surface-2)" }} />
-        <div className="h-3 w-32 rounded-full" style={{ background: "var(--surface-2)" }} />
-      </div>
-      {/* Hero */}
-      <section className="flex flex-col gap-6 mb-16">
-        <div className="h-6 w-24 rounded-lg" style={{ background: "var(--surface-2)" }} />
-        <div className="flex flex-col gap-3">
-          <div className="h-12 w-96 rounded-xl" style={{ background: "var(--surface-2)" }} />
-          <div className="h-5 w-48 rounded-full" style={{ background: "var(--surface-2)" }} />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <div className="h-3 w-full max-w-2xl rounded-full" style={{ background: "var(--surface-2)" }} />
-          <div className="h-3 w-4/5 max-w-2xl rounded-full" style={{ background: "var(--surface-2)" }} />
-          <div className="h-3 w-3/5 max-w-2xl rounded-full" style={{ background: "var(--surface-2)" }} />
-        </div>
-        <div style={{ height: "1px", background: "var(--border)" }} />
-        <div className="flex items-center gap-6">
-          <div className="h-12 w-40 rounded-xl" style={{ background: "var(--surface-2)" }} />
-          <div className="flex gap-3">
-            <div className="h-12 w-36 rounded-2xl" style={{ background: "var(--surface-2)" }} />
-            <div className="h-12 w-28 rounded-2xl" style={{ background: "var(--surface-2)" }} />
-          </div>
-        </div>
-      </section>
-      {/* Reviews + Rating grid */}
-      <section className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 rounded-2xl p-8 h-96" style={{ background: "var(--surface)", border: "1px solid var(--border)" }} />
-        <div className="rounded-2xl p-8 h-64" style={{ background: "var(--surface)", border: "1px solid var(--border)" }} />
-      </section>
-    </div>
-  );
-}
-
-function StarRating({ rating }: { rating: number }) {
-  const full = Math.floor(rating);
-  const partial = rating % 1;
-  const empty = 5 - Math.ceil(rating);
-
-  return (
-    <div className="flex items-center gap-1">
-      {Array.from({ length: full }).map((_, i) => (
-        <svg key={`f-${i}`} className="w-5 h-5" viewBox="0 0 24 24" fill="#f0a500">
-          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-        </svg>
-      ))}
-      {partial > 0 && (
-        <svg className="w-5 h-5" viewBox="0 0 24 24">
-          <defs>
-            <linearGradient id={`partial-detail-${rating}`}>
-              <stop offset={`${partial * 100}%`} stopColor="#f0a500" />
-              <stop offset={`${partial * 100}%`} stopColor="#2a2a32" />
-            </linearGradient>
-          </defs>
-          <path
-            d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
-            fill={`url(#partial-detail-${rating})`}
-          />
-        </svg>
-      )}
-      {Array.from({ length: empty }).map((_, i) => (
-        <svg key={`e-${i}`} className="w-5 h-5" viewBox="0 0 24 24" fill="#2a2a32">
-          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-        </svg>
-      ))}
-    </div>
-  );
-}
+import { StarRating } from "@/app/components/ui/star-rating";
+import { ProductPageSkeleton } from "@/app/components/ui/product-page-skeleton";
 
 function RatingBar({ label, value, accentColor }: { label: string; value: number, accentColor: string }) {
   return (
@@ -167,7 +94,7 @@ async function ProductContent({ params }: { params: PageProps<"/product/[slug]">
               {product.name}
             </h1>
             <div className="flex items-center gap-3">
-              <StarRating rating={product.overall_rating!} />
+              <StarRating rating={product.overall_rating!} size="md" />
               <span
                 className="text-sm"
                 style={{ color: "var(--muted)", fontFamily: "var(--font-dm-sans)" }}
@@ -293,11 +220,36 @@ async function ProductContent({ params }: { params: PageProps<"/product/[slug]">
         </section>
 
         {/* Related products */}
-        <Suspense>
+        <Suspense
+          fallback={
+            <div className="flex gap-4 overflow-hidden animate-pulse">
+              {[1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="h-56 w-56 shrink-0 rounded-xl"
+                  style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
+                />
+              ))}
+            </div>
+          }
+        >
           <RelatedProductsGrid product={product}></RelatedProductsGrid>
         </Suspense>
       </div>
   );
+}
+
+export async function generateMetadata(
+  props: PageProps<"/product/[slug]">,
+): Promise<Metadata> {
+  const { slug } = await props.params;
+  const product = await getProduct({ slug });
+  if (!product) return {};
+
+  return {
+    title: `${product.name} | The Music Palace`,
+    description: product.description,
+  };
 }
 
 export default function ProductPage(props: PageProps<"/product/[slug]">) {

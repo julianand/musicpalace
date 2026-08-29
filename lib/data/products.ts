@@ -1,23 +1,19 @@
 import { Product, ProductCategory } from "@/types";
+import type { products } from "@/app/generated/prisma/client";
 import { prisma } from "../prisma";
 import { cacheLife } from "next/cache";
 import { getSessionUser } from "../actions/session.action";
+import { formatPrice } from "@/lib/products/format";
 
-function formatPrice(value: number): string {
-  const rounded = Math.round(value);
-  return "$" + rounded.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-}
+export type CompleteProductRow = products & {
+  product_categories: ProductCategory;
+  favorites?: { id: bigint }[];
+};
 
-export const completeProduct = (
-  product: Product & {
-    product_categories: ProductCategory;
-    favorites?: { id: bigint }[];
-  },
-) => {
+export const completeProduct = (product: CompleteProductRow) => {
   const { favorites, product_categories, ...rest } = product;
   return {
     ...rest,
-    product_categories: undefined,
     category: {
       ...product_categories,
     },
@@ -31,7 +27,7 @@ export async function getProducts(
 ): Promise<Product[]> {
   const user = await getSessionUser();
 
-  const res = (await prisma.products.findMany({
+  const res = await prisma.products.findMany({
     include: {
       product_categories: true,
       ...(user
@@ -45,11 +41,9 @@ export async function getProducts(
         : {}),
     },
     ...params,
-  })) as (Product & {
-    favorites?: { id: bigint }[];
-  })[];
+  });
 
-  return res.map((p) => completeProduct(p as never));
+  return res.map((p) => completeProduct(p as CompleteProductRow));
 }
 
 export async function getProductCount(
@@ -61,12 +55,38 @@ export async function getProductCount(
   return prisma.products.count({ ...params });
 }
 
+export async function getSearchResults(query: string) {
+  "use cache";
+  cacheLife("minutes");
+
+  return prisma.products.findMany({
+    where: {
+      name: { contains: query, mode: "insensitive" },
+    },
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      price: true,
+      product_categories: {
+        select: {
+          id: true,
+          name: true,
+          accent_color: true,
+          background_color: true,
+        },
+      },
+    },
+    take: 8,
+  });
+}
+
 export async function getProduct(
   params: Partial<Product>,
 ): Promise<Product | null> {
   const user = await getSessionUser();
 
-  const res = (await prisma.products.findUnique({
+  const res = await prisma.products.findUnique({
     include: {
       product_categories: true,
       ...(user
@@ -80,11 +100,9 @@ export async function getProduct(
         : {}),
     },
     where: params as never,
-  })) as (Product & {
-    favorites?: { id: bigint }[];
-  }) | null;
+  });
 
   if (!res) return null;
 
-  return completeProduct(res as never);
+  return completeProduct(res as CompleteProductRow);
 }

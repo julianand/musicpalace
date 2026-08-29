@@ -82,6 +82,7 @@ export function ResultCount({ productCount }: { productCount: number }) {
       <div className="flex items-center gap-1">
         {/* Prev */}
         <button
+          aria-label="Previous page"
           className="p-2 rounded-lg transition-colors cursor-pointer"
           style={{
             border: "1px solid var(--border)",
@@ -116,6 +117,7 @@ export function ResultCount({ productCount }: { productCount: number }) {
           ) : (
             <button
               key={i}
+              aria-current={slot === activePage ? "page" : undefined}
               className="w-8 h-8 rounded-lg text-xs font-semibold transition-colors cursor-pointer"
               style={{
                 background:
@@ -134,6 +136,7 @@ export function ResultCount({ productCount }: { productCount: number }) {
 
         {/* Next */}
         <button
+          aria-label="Next page"
           className="p-2 rounded-lg transition-colors cursor-pointer"
           style={{
             border: "1px solid var(--border)",

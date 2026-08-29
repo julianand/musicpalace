@@ -1,20 +1,30 @@
 "use client";
 
 import { CartProduct } from "@/lib/data/cart";
-import { useCart } from "@/lib/providers/cart.provider";
+import { useCartState } from "@/lib/providers/cart.provider";
+import { formatPrice } from "@/lib/products/format";
 import { CartButton } from "./cart-button";
 import { CartCheckoutButton } from "./cart-checkout-button";
 import { RefObject, useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 
-function CartToggleButton({ ref }: { ref: RefObject<HTMLElement> }) {
-  const cartProducts = useCart().products;
+function CartToggleButton({
+  ref,
+  isOpen,
+}: {
+  ref: RefObject<HTMLButtonElement>;
+  isOpen: boolean;
+}) {
+  const cartProducts = useCartState().products;
   const totalItems = cartProducts.reduce((sum, p) => sum + p.quantity, 0);
 
   return (
     <button
+      type="button"
+      aria-label="Open cart"
+      aria-expanded={isOpen}
       className="relative p-2 rounded-xl transition-colors duration-200 cursor-pointer"
-      ref={ref as never}
+      ref={ref}
       style={{
         background: "var(--surface-2)",
         border: "1px solid var(--border)",
@@ -137,17 +147,16 @@ function CartPreviewListItem({ product }: { product: CartProduct }) {
   );
 }
 
-export function CartPreviewList({ ref }: { ref: RefObject<HTMLElement> }) {
-  const products = useCart().products;
+export function CartPreviewList({ ref }: { ref: RefObject<HTMLDivElement> }) {
+  const products = useCartState().products;
   const isEmpty = products.length === 0;
   const totalItems = products.reduce((sum, p) => sum + p.quantity, 0);
   const total = products.reduce((sum, p) => sum + p.price * p.quantity, 0);
-  const formattedTotal =
-    "$" + total.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  const formattedTotal = formatPrice(total);
 
   return (
     <div
-      ref={ref as never}
+      ref={ref}
       className="absolute top-full right-0 mt-2 w-80 rounded-2xl overflow-hidden z-50"
       style={{
         background: "var(--surface)",
@@ -262,8 +271,8 @@ export function CartPreviewList({ ref }: { ref: RefObject<HTMLElement> }) {
 
 export function CartPreview() {
   const [previewOpen, setPreviewOpen] = useState(false);
-  const buttonRef = useRef<HTMLElement>(null!);
-  const listRef = useRef<HTMLElement>(null!);
+  const buttonRef = useRef<HTMLButtonElement>(null!);
+  const listRef = useRef<HTMLDivElement>(null!);
   const pathname = usePathname();
 
   useEffect(() => {
@@ -290,12 +299,20 @@ export function CartPreview() {
       { signal: controller.signal },
     );
 
+    window.addEventListener(
+      "keydown",
+      (e) => {
+        if (e.key === "Escape") setPreviewOpen(false);
+      },
+      { signal: controller.signal },
+    );
+
     return () => controller.abort();
   }, []);
 
   return (
     <div className="relative">
-      <CartToggleButton ref={buttonRef} />
+      <CartToggleButton ref={buttonRef} isOpen={previewOpen} />
       {previewOpen && <CartPreviewList ref={listRef} />}
     </div>
   );

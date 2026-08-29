@@ -1,7 +1,7 @@
 import { Product } from "@/types";
 import { prisma } from "../prisma";
 import { getSessionUser } from "../actions/session.action";
-import { completeProduct } from "./products";
+import { CompleteProductRow, completeProduct } from "./products";
 
 export type CartProduct = Product & {
   quantity: number;
@@ -22,7 +22,7 @@ export async function getCartProducts(): Promise<CartProduct[]> {
   });
 
   return rows.map((row) => ({
-    ...completeProduct(row.products as never),
+    ...completeProduct(row.products as CompleteProductRow),
     quantity: row.quantity,
   }));
 }

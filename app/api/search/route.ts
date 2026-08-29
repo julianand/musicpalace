@@ -1,4 +1,5 @@
-import { getProducts } from "@/lib/data/products";
+import { getSearchResults } from "@/lib/data/products";
+import { formatPrice } from "@/lib/products/format";
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
@@ -9,26 +10,18 @@ export async function GET(request: Request) {
     return NextResponse.json([]);
   }
 
-  const products = await getProducts({
-    where: {
-      name: {
-        contains: query,
-        mode: "insensitive",
-      },
-    },
-    take: 8,
-  });
+  const products = await getSearchResults(query);
 
   const serialized = products.map((p) => ({
     id: p.id.toString(),
     name: p.name,
     slug: p.slug,
-    formattedPrice: p.formattedPrice,
+    formattedPrice: formatPrice(p.price),
     category: {
-      id: p.category.id.toString(),
-      name: p.category.name,
-      accent_color: p.category.accent_color,
-      background_color: p.category.background_color,
+      id: p.product_categories.id.toString(),
+      name: p.product_categories.name,
+      accent_color: p.product_categories.accent_color,
+      background_color: p.product_categories.background_color,
     },
   }));
 
