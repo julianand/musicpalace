@@ -1,7 +1,8 @@
 import { Product, ProductCategory } from "@/types";
 import type { products } from "@/app/generated/prisma/client";
 import { prisma } from "../prisma";
-import { cacheLife } from "next/cache";
+import { cache } from "react";
+import { cacheLife, cacheTag } from "next/cache";
 import { getSessionUser } from "../actions/session.action";
 import { formatPrice } from "@/lib/products/format";
 
@@ -22,28 +23,55 @@ export const completeProduct = (product: CompleteProductRow) => {
   };
 };
 
-export async function getProducts(
+async function getProductsBase(
   params?: Parameters<typeof prisma.products.findMany>[0],
-): Promise<Product[]> {
-  const user = await getSessionUser();
+) {
+  "use cache";
+  cacheLife("hours");
+  cacheTag("products", "reviews");
 
-  const res = await prisma.products.findMany({
+  return prisma.products.findMany({
     include: {
       product_categories: true,
-      ...(user
-        ? {
-            favorites: {
-              where: { user_id: user.id },
-              select: { id: true },
-              take: 1,
-            },
-          }
-        : {}),
     },
     ...params,
   });
+}
 
-  return res.map((p) => completeProduct(p as CompleteProductRow));
+async function getProductBase(params: Partial<Product>) {
+  "use cache";
+  cacheLife("hours");
+  cacheTag("products", "reviews");
+
+  return prisma.products.findUnique({
+    include: {
+      product_categories: true,
+    },
+    where: params as never,
+  });
+}
+
+const getFavoriteIds = cache(async (userId: bigint): Promise<bigint[]> => {
+  const favs = await prisma.favorites.findMany({
+    where: { user_id: userId },
+    select: { product_id: true },
+  });
+  return favs.map((f) => f.product_id);
+});
+
+export async function getProducts(
+  params?: Parameters<typeof prisma.products.findMany>[0],
+): Promise<Product[]> {
+  const [user, rows] = await Promise.all([
+    getSessionUser(),
+    getProductsBase(params),
+  ]);
+
+  const products = rows.map((p) => completeProduct(p as CompleteProductRow));
+  if (!user) return products;
+
+  const favIds = new Set(await getFavoriteIds(user.id));
+  return products.map((p) => (favIds.has(p.id) ? { ...p, favorite: true } : p));
 }
 
 export async function getProductCount(
@@ -84,25 +112,16 @@ export async function getSearchResults(query: string) {
 export async function getProduct(
   params: Partial<Product>,
 ): Promise<Product | null> {
-  const user = await getSessionUser();
-
-  const res = await prisma.products.findUnique({
-    include: {
-      product_categories: true,
-      ...(user
-        ? {
-            favorites: {
-              where: { user_id: user.id },
-              select: { id: true },
-              take: 1,
-            },
-          }
-        : {}),
-    },
-    where: params as never,
-  });
+  const [user, res] = await Promise.all([
+    getSessionUser(),
+    getProductBase(params),
+  ]);
 
   if (!res) return null;
 
-  return completeProduct(res as CompleteProductRow);
+  const product = completeProduct(res as CompleteProductRow);
+  if (!user) return product;
+
+  const favIds = new Set(await getFavoriteIds(user.id));
+  return favIds.has(product.id) ? { ...product, favorite: true } : product;
 }

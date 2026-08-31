@@ -8,7 +8,6 @@ import { ProductReviews } from "./components/product-reviews";
 import { FavoriteButton } from "@/app/components/ui/favorite-button";
 import { CartButton } from "@/app/components/ui/cart-button";
 import { StarRating } from "@/app/components/ui/star-rating";
-import { ProductPageSkeleton } from "@/app/components/ui/product-page-skeleton";
 
 function RatingBar({ label, value, accentColor }: { label: string; value: number, accentColor: string }) {
   return (
@@ -258,9 +257,7 @@ export default function ProductPage(props: PageProps<"/product/[slug]">) {
       className="min-h-screen animate-fade-in-up"
       style={{ background: "var(--background)" }}
     >
-      <Suspense fallback={<ProductPageSkeleton />}>
-        <ProductContent params={props.params} />
-      </Suspense>
+      <ProductContent params={props.params} />
     </main>
   );
 }
