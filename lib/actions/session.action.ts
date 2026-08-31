@@ -10,9 +10,9 @@ export const getSessionUser = cache(async (): Promise<User | null> => {
   const cookieStore = await cookies();
   const supabase = createClient(cookieStore);
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  if (!session?.user) return null;
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
 
-  return prisma.users.findFirst({ where: { auth_id: session.user.id } });
+  return prisma.users.findFirst({ where: { auth_id: user.id } });
 });
