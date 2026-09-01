@@ -1,5 +1,8 @@
 import { test, expect } from "@playwright/test";
 
+// Logged-out file: override the project's storageState (signed in).
+test.use({ storageState: { cookies: [], origins: [] } });
+
 const PRODUCT_SLUG = "fender-player-precision-bass-ffea1";
 
 test.describe("Product page (sin login)", () => {

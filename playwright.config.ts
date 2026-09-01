@@ -14,6 +14,8 @@ try {
  */
 export default defineConfig({
   testDir: './e2e',
+  /* Generous timeout: cold `next dev` compilation + live Supabase auth calls. */
+  timeout: 60_000,
   /* Run tests in files in parallel */
   fullyParallel: true,
   /* Fail the build on CI if you accidentally left test.only in the source code. */
@@ -33,11 +35,24 @@ export default defineConfig({
     trace: 'on-first-retry',
   },
 
+  /* Authenticate once (sign up the e2e test user) and reuse it via storageState. */
+  globalTeardown: './e2e/global-teardown.ts',
+
   /* Configure projects for major browsers */
   projects: [
     {
-      name: 'chromium',
+      name: 'setup',
+      testMatch: /auth\.setup\.ts/,
       use: { ...devices['Desktop Chrome'] },
+    },
+    {
+      name: 'chromium',
+      dependencies: ['setup'],
+      testIgnore: /auth\.setup\.ts/,
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: 'playwright/.auth/user.json',
+      },
     },
 
     // {

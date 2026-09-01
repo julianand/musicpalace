@@ -1,5 +1,8 @@
 import { test, expect } from "@playwright/test";
 
+// Logged-out file: override the project's storageState (signed in).
+test.use({ storageState: { cookies: [], origins: [] } });
+
 const SEARCH_INPUT = "Search instruments, interfaces, monitors...";
 
 test.describe("Home page", () => {

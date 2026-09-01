@@ -20,13 +20,14 @@ Plan de implementación de los tests e2e. Cada fase se construye y se **verifica
 - [x] `e2e/product.spec.ts` — render + breadcrumb + relacionados; toasts de sign-in (cart/favorite); review form deshabilitado.
 - **Verificar:** `npx playwright test home.spec.ts product.spec.ts`
 
-### Fase 2 — Infra de auth
-- [ ] Proyectos `setup` + `chromium` con `storageState` en `playwright.config.ts`.
-- [ ] `e2e/auth.setup.ts` — sign-up via UI → guarda `playwright/.auth/user.json`.
-- [ ] `e2e/helpers/cleanup.ts` — `afterEach` que borra filas del test user.
-- [ ] `e2e/global-teardown.ts` — `DELETE FROM auth.users WHERE email LIKE 'e2e-%'`.
-- [ ] `e2e/auth.spec.ts` — toggle sign up, validaciones, sign-up real, sign out.
-- [ ] `docs/agents/e2e.md` + registro en `AGENTS.md` (convención de arquitectura).
+### Fase 2 — Infra de auth ✅
+- [x] Proyectos `setup` + `chromium` con `storageState` en `playwright.config.ts`.
+- [x] `e2e/auth.setup.ts` — sign-up via UI → guarda `playwright/.auth/user.json`.
+- [x] `e2e/helpers/cleanup.ts` — `afterEach` que borra filas del test user.
+- [x] `e2e/global-teardown.ts` — `DELETE FROM auth.users WHERE email LIKE 'e2e-%'`.
+- [x] `e2e/auth.spec.ts` — toggle sign up, validaciones, sign-up real, sign out.
+- [x] `docs/agents/e2e.md` + registro en `AGENTS.md` (convención de arquitectura).
+- [x] `home.spec.ts` / `product.spec.ts` con override de `storageState` (logged out).
 - **Verificar:** `npx playwright test auth.setup.ts auth.spec.ts` y 0 filas `e2e-%` en `auth.users` tras el run.
 
 ### Fase 3 — Cart + Purchases
