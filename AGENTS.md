@@ -65,3 +65,4 @@ loaded file as mandatory instructions for that area.
 - Cart / purchases (`CartProvider`, `/api/cart`, checkout, `app/purchases`) → `docs/agents/cart.md`
 - Reviews (`upsertReview`, `getReviews`, `ReviewForm`) → `docs/agents/reviews.md`
 - Prisma / DB triggers / seed → `docs/agents/database.md`
+- E2E tests / Playwright (`e2e/`, `playwright.config.ts`) → `docs/agents/e2e.md`

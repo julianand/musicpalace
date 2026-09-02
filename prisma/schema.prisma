@@ -118,7 +118,7 @@ model reviews {
   overall       Float    @default(dbgenerated("round((((((sound_quality + build_quality) + value) + ease_of_use))::numeric / 4.0), 1)"))
   comment       String?
   products      products @relation(fields: [product_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  users         users    @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users         users    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@schema("public")
 }
@@ -578,7 +578,7 @@ model favorites {
   product_id BigInt
   user_id    BigInt
   products   products @relation(fields: [product_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  users      users    @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users      users    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@schema("public")
 }
@@ -591,7 +591,7 @@ model carts {
   product_id BigInt
   quantity   Int
   products   products @relation(fields: [product_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  users      users    @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users      users    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@schema("public")
 }
@@ -605,7 +605,7 @@ model purchase_items {
   quantity    Int
   unit_price  Int
   products    products  @relation(fields: [product_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  purchases   purchases @relation(fields: [purchase_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  purchases   purchases @relation(fields: [purchase_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@schema("public")
 }
@@ -617,7 +617,7 @@ model purchases {
   user_id        BigInt
   total          Int
   purchase_items purchase_items[]
-  users          users            @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users          users            @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@schema("public")
 }
