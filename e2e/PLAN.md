@@ -8,7 +8,7 @@ Plan de implementación de los tests e2e. Cada fase se construye y se **verifica
 - **Usuario de test auto-provisionado**: `auth.setup.ts` hace sign-up con `e2e-<timestamp>@example.com` (password constante ≥6 chars) y guarda el `storageState` en `playwright/.auth/user.json`. Requiere "Confirm email" desactivado en Supabase (ya confirmado).
 - **Cascades en Supabase ya aplicados**: `favorites/carts/purchases/reviews → users(id)` y `purchase_items → purchases(id)` con `ON DELETE CASCADE`, más la FK existente `users.auth_id → auth.users` (CASCADE). Por eso el teardown es un solo `DELETE FROM auth.users WHERE email LIKE 'e2e-%'`.
 - **Cleanup por test**: `helpers/cleanup.ts` (`test.afterEach`) borra `favorites/carts/purchases/reviews` del test user. El trigger `trg_update_product_ratings` ya corre en `DELETE`, así que los agregados de productos se recomputan solos.
-- **Tests paralelos** (`fullyParallel`) compartiendo el test user → cada test usa un **producto distinto** y se limpia solo.
+- **Tests en serie**: la suite corre con `workers: 1`. Todos los specs comparten el test user y los de escritura mutan las mismas filas (`cleanupUserData` borra TODO del usuario en `afterEach`; el checkout borra todos los carts). Correr uno tras otro hace determinísticas las aserciones de badge/total y evita que el cleanup de un test pise a otro en paralelo. `auth.spec` mantiene `mode: 'serial'` como documentación de intención.
 - **Auth**: setup project + `storageState` para specs con login; `test.use({ storageState: { cookies: [], origins: [] } })` en la cabecera de los specs sin login.
 
 ## Fases
@@ -30,9 +30,10 @@ Plan de implementación de los tests e2e. Cada fase se construye y se **verifica
 - [x] `home.spec.ts` / `product.spec.ts` con override de `storageState` (logged out).
 - **Verificar:** `npx playwright test auth.setup.ts auth.spec.ts` y 0 filas `e2e-%` en `auth.users` tras el run.
 
-### Fase 3 — Cart + Purchases
-- [ ] `e2e/cart.spec.ts` — add → badge + toast, preview con total, +/−, vaciar, checkout → `/purchases`, persistencia tras recargar.
-- [ ] `e2e/purchases.spec.ts` — redirect sin login; lista con login.
+### Fase 3 — Cart + Purchases ✅
+- [x] `e2e/cart.spec.ts` — add → badge + toast, preview con total, +/−, vaciar, checkout → `/purchases`, persistencia tras recargar.
+- [x] `e2e/purchases.spec.ts` — redirect sin login; lista con login.
+- [x] `workers: 1` en `playwright.config.ts` (estado compartido del test user).
 - **Verificar:** correr ambos.
 
 ### Fase 4 — Favoritos

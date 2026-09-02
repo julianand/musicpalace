@@ -22,8 +22,12 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   /* Retry on CI only */
   retries: process.env.CI ? 2 : 0,
-  /* Opt out of parallel tests on CI. */
-  workers: process.env.CI ? 1 : undefined,
+  /* Single worker: all specs share the e2e test user, and write specs
+     (cart/purchases/favorites/reviews) mutate the same rows. Running tests
+     one after another makes badge/total assertions deterministic and keeps
+     per-test cleanup (afterEach deletes all of the user's rows) from
+     clobbering a concurrent test. Cost: a small suite runs ~15-30s slower. */
+  workers: 1,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: 'list',
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */

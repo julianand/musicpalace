@@ -50,7 +50,7 @@ test.describe("Home page", () => {
     await page.getByRole("button", { name: "2", exact: true }).click();
 
     await expect(page).toHaveURL(/page=2/);
-    await expect(page.getByText("Showing 9 products")).toBeVisible();
+    await expect(page.getByText("Showing 9 products").filter({ visible: true })).toBeVisible();
     await expect(
       page.getByRole("heading", { name: "Fender Player Precision Bass" }),
     ).toHaveCount(0);
@@ -65,7 +65,9 @@ test.describe("Home page", () => {
   test("la última página muestra el resto", async ({ page }) => {
     await page.goto("/?page=6");
 
-    await expect(page.getByText("Showing 5 products")).toBeVisible();
+    await expect(
+      page.getByText("Showing 5 products").filter({ visible: true }),
+    ).toBeVisible();
   });
 
   test("busca y navega al resultado", async ({ page }) => {
@@ -88,7 +90,9 @@ test.describe("Home page", () => {
 
     await page.getByPlaceholder(SEARCH_INPUT).fill("zzzzzz");
 
-    await expect(page.getByText("No se encontraron resultados")).toBeVisible();
+    await expect(
+      page.getByText("No se encontraron resultados").filter({ visible: true }),
+    ).toBeVisible();
   });
 
   test("cierra el dropdown con Escape y click fuera", async ({ page }) => {

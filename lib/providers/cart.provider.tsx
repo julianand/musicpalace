@@ -113,9 +113,22 @@ export function CartProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, [load]);
 
+  // A user mutation invalidates any in-flight load: the optimistic reducer
+  // state is ahead of the server, so a slow load (e.g. the initial GET that
+  // resolves after a click, or one triggered by an auth refresh) must not
+  // clobber it. Uses the same loadIdRef mechanism as load() — "the latest
+  // operation wins".
+  const mutateDispatch = useCallback(
+    (action: CartAction) => {
+      loadIdRef.current++;
+      dispatch(action);
+    },
+    [dispatch],
+  );
+
   return (
     <CartStateContext value={{ products, loaded }}>
-      <CartActionsContext value={{ dispatch, reload: load }}>
+      <CartActionsContext value={{ dispatch: mutateDispatch, reload: load }}>
         {children}
       </CartActionsContext>
     </CartStateContext>
