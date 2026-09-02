@@ -36,6 +36,12 @@
 - **Live DB drifts from the seed** (review counts/aggregates are recomputed by triggers). Assert with regex/robust locators, not exact seed values.
 - Selectors: prefer `getByRole`/`getByLabel`; the sort `<select>` and the search `<input>` are both `role="combobox"` — disambiguate with `page.locator('select')` and `getByPlaceholder(...)`.
 
+## Wishlist specifics
+
+- `/wishlist` has a `loading.tsx` (skeleton), so it streams an S:1 hidden copy during `next dev`. All current wishlist assertions are `getByRole`-based (headings/buttons), which are immune to `display:none`; any future **text** assertion there needs `.filter({ visible: true })` (see the product-page gotcha). Logged-out visit → `redirect("/")` (assert home hero), same pattern as `/purchases`.
+- Add a favorite first on the product page (wait for the hero button to re-enable, the `toBeEnabled()` server-sync point from the favorites rules), then `/wishlist` shows the card (`getByRole("heading", { name })`).
+- **Remove-from-wishlist**: the card's `FavoriteButton` fires `onToggle → router.refresh()` after the server action resolves, so the removed card disappears and the "No favorites yet" empty state replaces it — no reload needed in the test.
+
 ## Favorites specifics
 
 - `FavoriteButton` (product hero `showLabel`, home/related cards icon-only) exposes the state as `aria-pressed` and flips its accessible name `Add to wishlist` ↔ `Remove from wishlist` — locate with `getByRole("button", { name: /wishlist/i })` so the same locator survives the toggle. Related cards on the product page have **no** heart, so the hero button is unique there; on the home grid scope to the card: `getByRole("heading", { name }).locator("xpath=ancestor::article")`.

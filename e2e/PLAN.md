@@ -44,9 +44,14 @@ Plan de implementación de los tests e2e. Cada fase se construye y se **verifica
 - [x] `e2e/review.spec.ts` — gate por compra, post, edición.
 - **Verificar:** correrlo.
 
-### Fase 6 — Suite completa + limpieza
-- [ ] `npx playwright test` completo.
-- [ ] Verificar DB limpia: sin `e2e-%` en `auth.users`, sin filas residuales de `favorites/carts/purchases/reviews` del test user.
+### Fase 6 — Suite completa + limpieza ✅
+- [x] `npx playwright test` completo — **29 passed**.
+- [x] Verificar DB limpia: sin `e2e-%` en `auth.users`, sin filas residuales de `favorites/carts/purchases/reviews` del test user. Agregados de FENDER consistentes con el seed (`review_count` 6, `overall_rating` 4.8) tras los `DELETE` de reviews.
+
+### Fase 7 — Wishlist (página + spec) ✅
+- [x] `app/wishlist/` — página protegida (redirect sin login), `getFavoriteProducts` en `lib/data/products.ts`, `WishlistCard` con remover + `router.refresh()`, prop `onToggle` en `FavoriteButton`, `loading.tsx` (skeleton).
+- [x] `e2e/wishlist.spec.ts` — redirect, estado vacío, agregar + quitar.
+- **Verificar:** correrlo.
 
 ## Datos deterministas del seed (para aserciones)
 
@@ -54,7 +59,7 @@ Plan de implementación de los tests e2e. Cada fase se construye y se **verifica
 - Producto más barato: AKG K240 Studio ($69) → primer card con `sort=price_asc`.
 - Instrumento top-rated: Fender Player Precision Bass (4.8) → en la página 1, fuera de la página 2.
 - Búsqueda "Shure" → Shure SM7B / Shure SM58; "zzzzzz" → "No se encontraron resultados".
-- Producto para tests de producto: `fender-player-precision-bass-ffea1` (Instrument, $849, 4.8 · 5 reviews).
+- Producto para tests de producto: `fender-player-precision-bass-ffea1` (Instrument, $849, 4.8 · 6 reviews).
 
 > Nota: la DB en vivo puede diferir del seed (agregados de reviews recomputados por trigger). Usar aserciones robustas (regex, `filter({ visible: true })`), no valores exactos del seed.
 

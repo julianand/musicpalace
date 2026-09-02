@@ -59,6 +59,26 @@ const getFavoriteIds = cache(async (userId: bigint): Promise<bigint[]> => {
   return favs.map((f) => f.product_id);
 });
 
+// Wishlist page: the logged-in user's favorited products. Follows the split
+// convention — cached base query + per-user favorites overlay (favorite: true).
+export async function getFavoriteProducts(): Promise<Product[]> {
+  const user = await getSessionUser();
+  if (!user) return [];
+
+  const favIds = await getFavoriteIds(user.id);
+  if (favIds.length === 0) return [];
+
+  const favSet = new Set(favIds);
+  const rows = await getProductsBase({
+    where: { id: { in: favIds } },
+  });
+
+  return rows.map((p) => ({
+    ...completeProduct(p as CompleteProductRow),
+    favorite: favSet.has(p.id),
+  }));
+}
+
 export async function getProducts(
   params?: Parameters<typeof prisma.products.findMany>[0],
 ): Promise<Product[]> {

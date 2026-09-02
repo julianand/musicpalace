@@ -23,6 +23,7 @@ type FavoriteButtonProps = {
   productId: bigint;
   favorite: boolean;
   showLabel?: boolean;
+  onToggle?: (favorite: boolean) => void;
   className?: string;
   style?: React.CSSProperties;
 };
@@ -31,6 +32,7 @@ export function FavoriteButton({
   productId,
   favorite,
   showLabel = false,
+  onToggle,
   className,
   style,
 }: FavoriteButtonProps) {
@@ -72,6 +74,7 @@ export function FavoriteButton({
 
     setIsFavorite(result.favorite ?? false);
     setPending(false);
+    onToggle?.(result.favorite ?? false);
   }
 
   const label = showLabel
