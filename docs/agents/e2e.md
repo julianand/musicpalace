@@ -36,6 +36,22 @@
 - **Live DB drifts from the seed** (review counts/aggregates are recomputed by triggers). Assert with regex/robust locators, not exact seed values.
 - Selectors: prefer `getByRole`/`getByLabel`; the sort `<select>` and the search `<input>` are both `role="combobox"` — disambiguate with `page.locator('select')` and `getByPlaceholder(...)`.
 
+## Favorites specifics
+
+- `FavoriteButton` (product hero `showLabel`, home/related cards icon-only) exposes the state as `aria-pressed` and flips its accessible name `Add to wishlist` ↔ `Remove from wishlist` — locate with `getByRole("button", { name: /wishlist/i })` so the same locator survives the toggle. Related cards on the product page have **no** heart, so the hero button is unique there; on the home grid scope to the card: `getByRole("heading", { name }).locator("xpath=ancestor::article")`.
+- **User-load gate**: `FavoriteButton` reads `useUser()` client-side; clicking before the session loads shows the "Sign in to save favorites" toast instead of toggling. The same provider feeds the "Account menu" button its initials, so wait `toContainText(TEST_USER_INITIALS)` before clicking hearts (and after any `reload` that precedes an interaction).
+- **Server sync point**: favorites mutate via a server action (no `/api/favorites` to poll). The button is `disabled={pending}` while the action is in flight — wait `toBeEnabled()` after the click; once enabled the row is committed. `favorites.spec.ts` additionally polls `getUserFavoriteIds` (helpers/db.ts) for the add/remove assertion.
+- Persistence works because `getFavoriteIds` is React `cache()` (per-request) applied *outside* the `"use cache"` products fetch — a reload re-reads favorites even though the product rows are cached.
+
+## Reviews specifics
+
+- **Purchase gate**: `ReviewForm` renders disabled (radios, comment, submit) with "You must purchase this product to leave a review." until the user has a `purchase_items` row for the product (server-driven via `getReviewState`). When not purchased the form also renders its own `+ Add to Cart`, so the logged-in product page shows **two** `+ Add to Cart` buttons (hero + form) → `toHaveCount(2)`; after purchasing, `1`.
+- **Form scope**: the review form is the only `<form>` on the product page, but the S:1 hidden copy duplicates it, so a bare `page.locator("form")` resolves to 2. Scope with `page.locator("form").filter({ visible: true })` before chaining `getByRole`/`getByLabel`.
+- **Hydration gate**: the radios need React handlers attached, so gate interactions on the Account-menu initials (`waitForUser`) — same as favorites.
+- **Sync point**: submit fires the `upsertReview` server action inside a `useTransition`, then shows a toast ("Review posted"/"Review updated") and calls `router.refresh()`. Wait on the toast + the heading flip (`Leave a review` → `Your review`) / button flip (`Post review` → `Update review`); the list reflects the change via `updateTag("reviews")` + refresh. No REST endpoint to poll — the DB assertion (`getUserReview`) is belt-and-suspenders after the UI settles.
+- **Fixtures (helpers/db.ts)**: the "purchased" state is seeded with `ensurePurchaseForUser` (idempotent `purchases` + `purchase_items` insert; `total`/`unit_price` from `products.price`) and the edit path with `insertReviewForUser` (`reviews.overall` is a DB-generated column, so it computes on insert). Cleanup's `DELETE FROM reviews` restores product aggregates via the trigger.
+- **List assertions** (author name `E2E Test`, comment wrapped in curly quotes) need `.filter({ visible: true })` — the product page streams into S:1.
+
 ## Cart & purchases specifics
 
 - **Distinct product per test** (fixed DB prices → deterministic totals). Slugs/prices: `fender-player-precision-bass-ffea1` $849, `shure-sm7b-26300` $399, `akg-k240-studio-d448e` $69, `audio-technica-at2020-b3862` $99.

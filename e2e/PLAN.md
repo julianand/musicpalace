@@ -36,12 +36,12 @@ Plan de implementación de los tests e2e. Cada fase se construye y se **verifica
 - [x] `workers: 1` en `playwright.config.ts` (estado compartido del test user).
 - **Verificar:** correr ambos.
 
-### Fase 4 — Favoritos
-- [ ] `e2e/favorites.spec.ts` — toggle en product page, heart en homepage (`aria-pressed`), persistencia tras recarga.
+### Fase 4 — Favoritos ✅
+- [x] `e2e/favorites.spec.ts` — toggle en product page, heart en homepage (`aria-pressed`), persistencia tras recarga.
 - **Verificar:** correrlo.
 
-### Fase 5 — Reviews
-- [ ] `e2e/review.spec.ts` — gate por compra, post, edición.
+### Fase 5 — Reviews ✅
+- [x] `e2e/review.spec.ts` — gate por compra, post, edición.
 - **Verificar:** correrlo.
 
 ### Fase 6 — Suite completa + limpieza
