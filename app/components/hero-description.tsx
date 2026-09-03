@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export function HeroDescription() {
   return (
     <section
@@ -53,6 +55,29 @@ export function HeroDescription() {
           Honest, in-depth reviews of instruments, audio interfaces, monitors,
           microphones and more — written by musicians and producers.
         </p>
+        <Link
+          href="/about"
+          className="mt-8 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 hover:opacity-85 cursor-pointer"
+          style={{
+            background: "var(--surface-2)",
+            border: "1px solid var(--border)",
+            color: "var(--foreground)",
+            fontFamily: "var(--font-dm-sans)",
+          }}
+        >
+          About this project
+          <svg
+            className="w-4 h-4"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M9 18l6-6-6-6" />
+          </svg>
+        </Link>
       </div>
     </section>
   );

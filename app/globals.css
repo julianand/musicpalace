@@ -90,6 +90,23 @@ body {
   background: var(--amber);
 }
 
+.tool-card {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  transition: transform 200ms ease, background-color 200ms ease,
+    border-color 200ms ease;
+}
+
+.tool-card:hover {
+  transform: translateY(-4px);
+  background: color-mix(in srgb, var(--tool-color) 13%, transparent);
+  border-color: color-mix(in srgb, var(--tool-color) 45%, transparent);
+}
+
+.tool-card:hover .tool-card-name {
+  color: color-mix(in srgb, var(--tool-color) 60%, white);
+}
+
 @keyframes toastEnter {
   from {
     opacity: 0;

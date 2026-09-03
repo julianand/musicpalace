@@ -42,6 +42,11 @@
 - Add a favorite first on the product page (wait for the hero button to re-enable, the `toBeEnabled()` server-sync point from the favorites rules), then `/wishlist` shows the card (`getByRole("heading", { name })`).
 - **Remove-from-wishlist**: the card's `FavoriteButton` fires `onToggle → router.refresh()` after the server action resolves, so the removed card disappears and the "No favorites yet" empty state replaces it — no reload needed in the test.
 
+## About specifics
+
+- `/about` is a public static page (no `loading.tsx`, no auth) — plain `getByRole` assertions, no S:1 handling needed. `about.spec.ts` covers the footer `About` link (root layout, `Link href="/about"`) and the home hero `About this project` link navigating to the page, plus the page's stack/features/"Run it locally"/"About me"/links rendering.
+- **Name collision**: the hero link "About this project" is a substring match for `getByRole("link", { name: "About" })` (default is substring) — always target the footer link with `{ name: "About", exact: true }`, and the hero link with the full name. External links (Vercel demo, GitHub repo/profile, LinkedIn) are asserted by accessible name regex, not `href`; the GitHub **profile** link (`github.com/julianand`) is disambiguated from the **repo** link (`github.com/julianand/musicpalace`) with a trailing `$` in the regex.
+
 ## Favorites specifics
 
 - `FavoriteButton` (product hero `showLabel`, home/related cards icon-only) exposes the state as `aria-pressed` and flips its accessible name `Add to wishlist` ↔ `Remove from wishlist` — locate with `getByRole("button", { name: /wishlist/i })` so the same locator survives the toggle. Related cards on the product page have **no** heart, so the hero button is unique there; on the home grid scope to the card: `getByRole("heading", { name }).locator("xpath=ancestor::article")`.
@@ -68,6 +73,15 @@
 - **Optimistic-UI race (the cart mutation bug)**: cart mutations update the UI instantly but the POST can still be in flight when a test ends. Closing the page mid-request leaves the server behind the UI, and a late request can re-create a row *after* the afterEach DELETE. Rule: never end a cart test until the server reflects the final state — poll `page.request.get('/api/cart')` (shares the page session) until it matches (see `expectServerCartEmpty`). The add case is covered by waiting for the "Added to cart" toast (fires only once the POST resolves) before navigating/reloading.
 - **App finding (out of e2e scope)**: `/api/cart` POST's `findFirst → create` guard is a TOCTOU race — concurrent +1 requests for the same product can create duplicate rows (observed as two `product_id` rows at quantity 0 after an aborted run). The tests now drain the queue before cleanup, so it doesn't flake the suite, but the guard is worth revisiting (e.g., a unique constraint + `onConflictDoNothing`).
 - **App fix (found by e2e)**: a slow *initial* cart GET (`CartProvider` mount `load()`) could resolve **after** a user click and clobber the optimistic update with a stale/empty snapshot — the `loadIdRef` guard couldn't see optimistic dispatches, so it accepted the `[]`. Fix: `cart.provider.tsx` now exposes a wrapped `dispatch` that bumps `loadIdRef.current` on every mutation, so any in-flight load is discarded ("the latest operation wins"). No server re-sync on success — the optimistic state is already correct, and re-syncing caused a flicker when adding products in quick succession (the reload of item A saw B still in flight). `use-cart-mutation`'s `onSynced` remains error/catch-only. Specs trust the "Added to cart" toast + badge.
+
+## Deterministic seed data (for assertions)
+
+- 50 products, pagination of 9 → 6 pages; the last page shows "Showing 5 products".
+- Cheapest product: AKG K240 Studio ($69) → first card with `sort=price_asc`.
+- Top-rated instrument: Fender Player Precision Bass (4.8) → on page 1, off page 2.
+- Search "Shure" → Shure SM7B / Shure SM58; "zzzzzz" → "No se encontraron resultados".
+- Product for product-page tests: `fender-player-precision-bass-ffea1` (Instrument, $849, 4.8 · 6 reviews).
+- The live DB can drift from the seed (review aggregates recomputed by triggers). Assert with regex/robust locators, not exact seed values.
 
 ## Running
 

@@ -21,7 +21,7 @@ const dmSans = DM_Sans({
 export const metadata: Metadata = {
   title: "The Music Palace",
   description:
-    "Reviews of instruments, audio interfaces, monitors, microphones and more.",
+    "A demo storefront for music gear reviews — built with Next.js, Supabase and Prisma.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

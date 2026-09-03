@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export function Footer() {
   return (
     <footer
@@ -23,9 +25,9 @@ export function Footer() {
           <span>© 2026</span>
         </div>
         <div className="flex items-center gap-6">
-          <a href="#" className="hover:text-foreground transition-colors">
+          <Link href="/about" className="hover:text-foreground transition-colors">
             About
-          </a>
+          </Link>
           <a href="#" className="hover:text-foreground transition-colors">
             Contact
           </a>

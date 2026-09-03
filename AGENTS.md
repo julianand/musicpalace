@@ -39,6 +39,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 ### Documenting architecture changes
 - **Any change that affects the architecture must be documented in the relevant `docs/agents/*.md` area file as part of the same change — don't wait to be asked.** This covers: data flow / state ownership changes, new or renamed providers, API routes, server actions, hooks, DB tables/columns, file moves between the `lib/` layers, and component architecture changes. Update the relevant area file (or add a new section) in the same change.
+- **Keep `README.md` in sync when the project's public-facing surface changes** — demo links, tech stack, features, or getting-started/setup steps. It's the page a visitor/recruiter sees first, so review it whenever a change touches any of those.
 
 ## Architecture / directory layout
 

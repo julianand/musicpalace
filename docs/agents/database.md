@@ -10,7 +10,8 @@
 
 ## Database triggers (managed in Supabase)
 These run in the live DB — don't replicate their work in Prisma code:
-- `trg_update_product_ratings` — `AFTER INSERT OR UPDATE ON public.reviews` → recomputes `products.overall_sound_quality`, `overall_build_quality`, `overall_value`, `overall_ease_of_use`, `overall_rating`, and `review_count`. So review mutations (create/edit) must **not** update product aggregates. Note: it does **not** fire on `DELETE` — if review deletion is ever added, recompute the aggregates in code.
+- `on_auth_user_created` — `AFTER INSERT ON auth.users` → `public.handle_new_user()` (SECURITY DEFINER, `search_path` = `public`) inserts a `public.users` row (`auth_id`, `email`, `firstname`, `lastname`) on every signup. `firstname`/`lastname` are read from `raw_user_meta_data` — the app's sign-up form sends them as `options.data: { firstname, lastname }`. This is why a signup automatically creates the app user (and the `users.auth_id → auth.users` CASCADE is what lets the e2e teardown delete a user in one shot).
+- `trg_update_product_ratings` — `AFTER INSERT OR DELETE OR UPDATE ON public.reviews` → recomputes `products.overall_sound_quality`, `overall_build_quality`, `overall_value`, `overall_ease_of_use`, `overall_rating`, and `review_count`. So review mutations (create/edit/delete) must **not** update product aggregates — the trigger runs on `DELETE` too, so removing a review (e.g. the e2e per-test cleanup) restores the aggregates automatically.
 - `trg_set_product_slug` — `BEFORE INSERT ON public.products` → auto-generates `products.slug`. Products can't be created from the app yet, but this applies whenever that lands.
 
 ## Seed / backup
