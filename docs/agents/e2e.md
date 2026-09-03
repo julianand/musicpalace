@@ -44,8 +44,8 @@
 
 ## About specifics
 
-- `/about` is a public static page (no `loading.tsx`, no auth) — plain `getByRole` assertions, no S:1 handling needed. `about.spec.ts` covers the footer `About` link (root layout, `Link href="/about"`) and the home hero `About this project` link navigating to the page, plus the page's stack/features/"Run it locally"/"About me"/links rendering.
-- **Name collision**: the hero link "About this project" is a substring match for `getByRole("link", { name: "About" })` (default is substring) — always target the footer link with `{ name: "About", exact: true }`, and the hero link with the full name. External links (Vercel demo, GitHub repo/profile, LinkedIn) are asserted by accessible name regex, not `href`; the GitHub **profile** link (`github.com/julianand`) is disambiguated from the **repo** link (`github.com/julianand/musicpalace`) with a trailing `$` in the regex.
+- `/about` is a public static page (no `loading.tsx`, no auth) — plain `getByRole` assertions, no S:1 handling needed. `about.spec.ts` covers the footer `About` link (root layout, `Link href="/about"`) and the home hero `About this project` link navigating to the page, plus the page's "About me"/stack/features/"Run it locally" rendering.
+- **Name collision**: the hero link "About this project" is a substring match for `getByRole("link", { name: "About" })` (default is substring) — always target the footer link with `{ name: "About", exact: true }`, and the hero link with the full name. The only external links left on the page live in the first "About me" card (GitHub profile, LinkedIn) and are asserted by accessible name regex, not `href`; the GitHub link (`github.com/julianand`) uses a trailing `$` so it can't match a longer GitHub URL.
 
 ## Favorites specifics
 
@@ -65,6 +65,7 @@
 
 ## Cart & purchases specifics
 
+- **Local retries**: `cart.spec.ts` sets `test.describe.configure({ retries: 2 })` on the whole `Cart (con login)` describe, overriding the config's local `retries: 0` (CI keeps its global `2`). Reason: the optimistic `POST /api/cart` can race the page teardown (see the optimistic-UI race below) and flake these tests intermittently. Safe because afterEach cleanup + `workers: 1` leave each attempt with a clean cart; `trace: 'on-first-retry'` captures the failed attempt.
 - **Distinct product per test** (fixed DB prices → deterministic totals). Slugs/prices: `fender-player-precision-bass-ffea1` $849, `shure-sm7b-26300` $399, `akg-k240-studio-d448e` $69, `audio-technica-at2020-b3862` $99.
 - The cart header lives in the **root layout, outside** the product page's Suspense boundary → the preview panel is never duplicated by `S:1`. Scope panel assertions with `page.locator("div.relative").filter({ has: openCartButton })` to avoid matching the hero price / page content (e.g. the hero shows the same `$849` as the preview total).
 - Total: read via `getByText("Total", { exact: true }).locator("xpath=following-sibling::span[1]")` — the item price and the total can be identical strings (single-item cart), so don't assert a bare price inside the panel.

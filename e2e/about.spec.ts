@@ -27,11 +27,14 @@ test.describe("About page", () => {
     ).toBeVisible();
   });
 
-  test("muestra stack, features y links", async ({ page }) => {
+  test("muestra stack, features, run it locally y about me", async ({ page }) => {
     await page.goto("/about");
 
     await expect(
       page.getByRole("heading", { name: "About this project" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "About me" }),
     ).toBeVisible();
     await expect(
       page.getByRole("heading", { name: "Built with" }),
@@ -43,20 +46,10 @@ test.describe("About page", () => {
       page.getByRole("heading", { name: "Run it locally" }),
     ).toBeVisible();
     await expect(
-      page.getByRole("heading", { name: "About me" }),
-    ).toBeVisible();
-    await expect(
       page.getByRole("link", { name: /linkedin\.com\/in\/julianpitre/ }),
     ).toBeVisible();
-    // Profile link (ends in /julianand) vs the repo link (/musicpalace).
     await expect(
       page.getByRole("link", { name: /github\.com\/julianand$/ }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole("link", { name: /musicpalace\.vercel\.app/ }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole("link", { name: /github\.com\/julianand\/musicpalace/ }),
     ).toBeVisible();
   });
 });

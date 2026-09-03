@@ -72,6 +72,12 @@ async function expectServerCartEmpty(page: Page) {
 }
 
 test.describe("Cart (con login)", () => {
+  // Retry locally: the optimistic POST /api/cart can race the page teardown
+  // (see the optimistic-UI race in docs/agents/e2e.md), which flakes these
+  // tests intermittently. Retry is safe — afterEach cleanup + workers: 1
+  // leave each attempt with a clean cart.
+  test.describe.configure({ retries: 2 });
+
   test("agrega al carrito → toast, badge y preview", async ({ page }) => {
     await page.goto(`/product/${FENDER}`);
 

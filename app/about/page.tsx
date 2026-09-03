@@ -1,4 +1,3 @@
-import Link from "next/link";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -89,6 +88,45 @@ export default function AboutPage() {
       </header>
 
       <div className="flex flex-col gap-6">
+        <SectionCard title="About me">
+          <div className="flex flex-col gap-3 text-sm" style={{ color: "var(--muted)", fontFamily: "var(--font-dm-sans)" }}>
+            <h3
+              className="text-xl font-black leading-tight"
+              style={{
+                background: "linear-gradient(90deg, #f0a500, #fcd34d)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+              }}
+            >
+              Hi 👋, my name is Julian Pitre
+            </h3>
+            <p className="leading-relaxed">
+              I'm a developer with 7+ years of experience building web applications.
+              I hope you enjoy this site, feel free to fork it if you want to review it deeply or use it to test another feature.
+            </p>
+            <div className="flex flex-col gap-2">
+              <a
+                href="https://github.com/julianand"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="transition-colors hover:text-(--amber)"
+                style={{ color: "var(--foreground)" }}
+              >
+                GitHub — github.com/julianand
+              </a>
+              <a
+                href="https://linkedin.com/in/julianpitre"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="transition-colors hover:text-(--amber)"
+                style={{ color: "var(--foreground)" }}
+              >
+                LinkedIn — linkedin.com/in/julianpitre
+              </a>
+            </div>
+          </div>
+        </SectionCard>
+
         <SectionCard title="Built with">
           <div className="flex flex-wrap gap-2">
             {STACK.map((item) => (
@@ -154,75 +192,6 @@ export default function AboutPage() {
             <p className="leading-relaxed">
               Full instructions live in the README.
             </p>
-          </div>
-        </SectionCard>
-
-        <SectionCard title="About me">
-          <div className="flex flex-col gap-3 text-sm" style={{ color: "var(--muted)", fontFamily: "var(--font-dm-sans)" }}>
-            <h3
-              className="text-3xl font-black leading-tight"
-              style={{
-                fontFamily: "var(--font-playfair)",
-                background: "linear-gradient(90deg, #f0a500, #fcd34d)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-              }}
-            >
-              Julian Pitre
-            </h3>
-            <p className="leading-relaxed">
-              Developer with 7+ years of experience building web applications.
-            </p>
-            <div className="flex flex-col gap-2">
-              <a
-                href="https://github.com/julianand"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="transition-colors hover:text-(--amber)"
-                style={{ color: "var(--foreground)" }}
-              >
-                GitHub — github.com/julianand
-              </a>
-              <a
-                href="http://linkedin.com/in/julianpitre"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="transition-colors hover:text-(--amber)"
-                style={{ color: "var(--foreground)" }}
-              >
-                LinkedIn — linkedin.com/in/julianpitre
-              </a>
-            </div>
-          </div>
-        </SectionCard>
-
-        <SectionCard title="Links">
-          <div className="flex flex-col gap-2 text-sm">
-            <a
-              href="https://musicpalace.vercel.app"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="transition-colors hover:text-(--amber)"
-              style={{ color: "var(--foreground)", fontFamily: "var(--font-dm-sans)" }}
-            >
-              Live demo — musicpalace.vercel.app
-            </a>
-            <a
-              href="https://github.com/julianand/musicpalace"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="transition-colors hover:text-(--amber)"
-              style={{ color: "var(--foreground)", fontFamily: "var(--font-dm-sans)" }}
-            >
-              Source code — github.com/julianand/musicpalace
-            </a>
-            <Link
-              href="/"
-              className="transition-colors hover:text-(--amber)"
-              style={{ color: "var(--muted)", fontFamily: "var(--font-dm-sans)" }}
-            >
-              Back to the catalog
-            </Link>
           </div>
         </SectionCard>
       </div>
